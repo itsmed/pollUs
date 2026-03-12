@@ -1,0 +1,121 @@
+'use strict';
+
+const pool = require('../db');
+const { CURRENT_CONGRESS } = require('../CONSTANTS');
+
+const CONGRESS_API_BASE = 'https://api.congress.gov/v3';
+const BILL_LIST_LIMIT = 250;
+
+const BILL_COLUMNS = `
+  id, title, origin_chamber, bill_type, bill_number, congress_number,
+  latest_action_text, latest_action_date, update_date, api_id, url
+`;
+
+/**
+ * Returns all cached bills for the current congress from the database.
+ * @returns {Promise<Array>}
+ */
+async function getCachedBills() {
+  const result = await pool.query(
+    `SELECT ${BILL_COLUMNS}
+     FROM bills
+     WHERE congress_number = $1
+     ORDER BY update_date DESC NULLS LAST, id DESC`,
+    [CURRENT_CONGRESS]
+  );
+  return result.rows;
+}
+
+/**
+ * Maps a Congress.gov API bill object to the database schema.
+ * @param {Object} apiBill - Bill object from the Congress.gov API.
+ * @returns {Object} Mapped bill object.
+ */
+function mapApiBill(apiBill) {
+  const typeStr = (apiBill.type ?? '').toLowerCase();
+  return {
+    title: apiBill.title ?? 'Untitled',
+    origin_chamber: apiBill.originChamber ?? null,
+    bill_type: apiBill.type ?? null,
+    bill_number: apiBill.number != null ? String(apiBill.number) : null,
+    congress_number: apiBill.congress ?? null,
+    latest_action_text: apiBill.latestAction?.text ?? null,
+    latest_action_date: apiBill.latestAction?.actionDate ?? null,
+    update_date: apiBill.updateDate ?? null,
+    api_id: `${apiBill.congress}/${typeStr}/${apiBill.number}`,
+    url: apiBill.url ?? null,
+  };
+}
+
+/**
+ * Fetches the most recent bills for the current Congress from the Congress.gov API,
+ * upserts them into the database, and returns the stored rows.
+ *
+ * Uses ON CONFLICT DO UPDATE to preserve FK relationships (votes, comments)
+ * while refreshing metadata like latest action and update date.
+ *
+ * @returns {Promise<Array>} Upserted bill rows.
+ */
+async function fetchAndCacheBills() {
+  const apiKey = process.env.CONGRESS_API_KEY;
+  if (!apiKey) {
+    throw new Error('CONGRESS_API_KEY environment variable is not set');
+  }
+
+  const url = `${CONGRESS_API_BASE}/bill/${CURRENT_CONGRESS}?api_key=${apiKey}&limit=${BILL_LIST_LIMIT}&format=json`;
+  const response = await fetch(url);
+
+  if (!response.ok) {
+    throw new Error(`Congress.gov API error: ${response.status} ${response.statusText}`);
+  }
+
+  const data = await response.json();
+  const bills = data.bills ?? [];
+
+  if (bills.length === 0) {
+    return [];
+  }
+
+  const inserted = [];
+  for (const apiBill of bills) {
+    const b = mapApiBill(apiBill);
+    const result = await pool.query(
+      `INSERT INTO bills
+         (title, origin_chamber, bill_type, bill_number, congress_number,
+          latest_action_text, latest_action_date, update_date, api_id, url)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+       ON CONFLICT (api_id) DO UPDATE SET
+         title               = EXCLUDED.title,
+         origin_chamber      = EXCLUDED.origin_chamber,
+         latest_action_text  = EXCLUDED.latest_action_text,
+         latest_action_date  = EXCLUDED.latest_action_date,
+         update_date         = EXCLUDED.update_date,
+         url                 = EXCLUDED.url
+       RETURNING ${BILL_COLUMNS}`,
+      [
+        b.title, b.origin_chamber, b.bill_type, b.bill_number, b.congress_number,
+        b.latest_action_text, b.latest_action_date, b.update_date, b.api_id, b.url,
+      ]
+    );
+    inserted.push(result.rows[0]);
+  }
+
+  return inserted;
+}
+
+/**
+ * Returns bills from the database if cached, otherwise fetches from the
+ * Congress.gov API for the current congress and upserts the results.
+ * @returns {Promise<{ bills: Array, source: 'cache'|'api' }>}
+ */
+async function getBills() {
+  const cached = await getCachedBills();
+  if (cached.length > 0) {
+    return { bills: cached, source: 'cache' };
+  }
+
+  const bills = await fetchAndCacheBills();
+  return { bills, source: 'api' };
+}
+
+module.exports = { getBills, getCachedBills, fetchAndCacheBills, mapApiBill };

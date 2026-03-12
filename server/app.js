@@ -8,6 +8,7 @@ var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
 var memberRouter = require('./routes/api/member');
 var representativesRouter = require('./routes/api/representatives');
+var billRouter = require('./routes/api/bill');
 
 var app = express();
 
@@ -25,6 +26,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
 app.use('/api/member', memberRouter);
+app.use('/api/bill', billRouter);
 app.use('/find-representative-and-senator', representativesRouter);
 
 module.exports = app;
