@@ -1,11 +1,4 @@
--- Bootstraps a fresh database container.
--- Creates the schema_migrations tracking table, runs the initial schema,
--- and marks migration 001 as applied so the migration script skips it.
-
-CREATE TABLE IF NOT EXISTS schema_migrations (
-  version    VARCHAR(255) PRIMARY KEY,
-  applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
+-- Migration 001: Initial schema for PollUs
 
 CREATE TABLE IF NOT EXISTS users (
   id    SERIAL PRIMARY KEY,
@@ -48,7 +41,3 @@ CREATE TABLE IF NOT EXISTS comments (
   content   TEXT        NOT NULL,
   timestamp TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
-
--- Mark the initial schema migration as applied so the migrate script skips it
-INSERT INTO schema_migrations (version) VALUES ('001_initial_schema')
-  ON CONFLICT (version) DO NOTHING;

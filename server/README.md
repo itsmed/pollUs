@@ -11,6 +11,10 @@ Express.js backend for PollUs. Runs on port **4000** in development.
 
 Run from the **repo root** using `pnpm dev` to also start the database and client together.
 
+| Command | Description |
+|---|---|
+| `pnpm test` | Run unit tests with Jest |
+
 ## Environment Variables
 
 Create `server/.env.development` for local development (already exists, not committed):
@@ -20,6 +24,7 @@ Create `server/.env.development` for local development (already exists, not comm
 | `NODE_ENV` | Runtime environment (`development` \| `production`) |
 | `PORT` | Port to listen on (default: `4000`) |
 | `DATABASE_URL` | Full PostgreSQL connection string |
+| `CONGRESS_API_KEY` | API key from [api.congress.gov](https://api.congress.gov/sign-up/) |
 
 ## Database
 
@@ -133,3 +138,94 @@ members (independent — populated from Congress.gov API cache)
 - Deleting a `user` cascades to their `votes` and `comments`.
 - Deleting a `bill` cascades to its `votes` and `comments`.
 - `members` and `bills` are populated by the Congress.gov API cache layer and are not user-owned.
+
+---
+
+## API Routes
+
+### `GET /api/member`
+
+Returns all congressional members. Checks the `members` database table first; on a cache miss, fetches from the Congress.gov `/member` endpoint, pages through all results, upserts them into the database, and returns the full list.
+
+**Response `200 OK`:**
+
+```json
+{
+  "source": "cache",
+  "count": 535,
+  "members": [
+    {
+      "id": 1,
+      "name": "Adams, Jane",
+      "state": "NC",
+      "district": "12",
+      "role": "Representative",
+      "party": "Democrat",
+      "api_id": "A000370"
+    }
+  ]
+}
+```
+
+| Field | Description |
+|---|---|
+| `source` | `"cache"` if returned from the database, `"api"` if fetched live |
+| `count` | Total number of members returned |
+| `members` | Array of member objects |
+
+**Response `500 Internal Server Error`:**
+
+```json
+{ "error": "Failed to retrieve members" }
+```
+
+**Caching behaviour:**
+- If any rows exist in the `members` table, the database result is returned immediately without calling the API.
+- If the table is empty, the Congress.gov API is called, all pages are fetched, and results are upserted (keyed on `api_id`) before returning.
+
+---
+
+## Code Structure
+
+```
+server/
+├── app.js                      # Express app setup and route mounting
+├── bin/www                     # HTTP server entry point (port 4000)
+├── db/
+│   └── index.js                # pg connection pool
+├── routes/
+│   └── api/
+│       └── member.js           # GET /api/member handler
+├── services/
+│   └── memberService.js        # Cache-check → API-fetch → DB-write logic
+└── tests/
+    └── memberService.test.js   # Unit tests for memberService
+```
+
+### Service: `memberService.js`
+
+| Export | Description |
+|---|---|
+| `getMembers()` | Top-level function: returns from cache or fetches from API |
+| `getCachedMembers()` | Queries the `members` table directly |
+| `fetchAndCacheMembers()` | Fetches all pages from Congress.gov API and upserts to DB |
+| `mapApiMember(apiMember)` | Maps a Congress.gov API member object to the DB schema |
+
+---
+
+## Testing
+
+Tests are in `server/tests/` and run with Jest. The `pg` pool and `fetch` are fully mocked — no database or network connection required.
+
+```bash
+pnpm test
+```
+
+**Test coverage:**
+
+| Area | Cases |
+|---|---|
+| `mapApiMember` | House member, Senator (null district), missing party |
+| `getCachedMembers` | Returns rows, empty result, DB error propagation |
+| `fetchAndCacheMembers` | Missing API key, single page, pagination, DB rollback on error, non-OK API response, empty API result |
+| `getMembers` | Cache hit (no API call), cache miss (calls API) |

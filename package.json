@@ -8,6 +8,8 @@
     "dev:down": "docker compose down",
     "db:up": "docker compose up db -d --wait",
     "db:down": "docker compose stop db",
+    "db:migrate": "bash scripts/migrate.sh",
+    "db:migrate:dry-run": "bash scripts/migrate.sh --dry-run",
     "db:reset": "docker compose down -v && docker compose up db -d --wait",
     "build": "pnpm --filter client build",
     "lint": "pnpm --filter client lint",

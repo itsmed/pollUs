@@ -22,8 +22,11 @@ pollus/
 ├── server/             # Express.js backend (port 4000)
 ├── docker/
 │   └── postgres/
-│       ├── Dockerfile  # PostgreSQL 16 image
-│       └── init/       # SQL scripts run on first startup
+│       ├── Dockerfile        # PostgreSQL 16 image
+│       ├── init/             # SQL run automatically on first container start
+│       └── migrations/       # Numbered SQL migration files
+├── scripts/
+│   └── migrate.sh            # Migration runner (pnpm db:migrate)
 ├── docker-compose.yml  # Full dev environment orchestration
 ├── .env.development    # Root-level Postgres credentials (dev defaults)
 └── package.json        # Root scripts using pnpm workspaces
@@ -65,6 +68,8 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 | `pnpm dev:down` | Stop all Docker services |
 | `pnpm db:up` | Start only the Postgres container |
 | `pnpm db:down` | Stop only the Postgres container |
+| `pnpm db:migrate` | Apply all pending SQL migrations |
+| `pnpm db:migrate:dry-run` | Print pending migrations without applying them |
 | `pnpm db:reset` | Destroy the database volume and recreate it (wipes all data) |
 | `pnpm build` | Build the client for production |
 | `pnpm lint` | Lint the client |
@@ -103,7 +108,36 @@ Loaded automatically by Next.js in development.
 
 In development, Postgres runs in a Docker container with a named volume (`postgres_data`) so data persists between restarts.
 
-SQL init scripts in `docker/postgres/init/` run once on first container creation (in filename order). Add migration scripts there as the schema evolves.
+### Migrations
+
+Schema changes are managed with numbered SQL migration files:
+
+```
+docker/postgres/migrations/
+├── 001_initial_schema.sql
+└── 002_your_next_change.sql   ← add new migrations here
+```
+
+Applied migrations are tracked in the `schema_migrations` table. To apply pending migrations:
+
+```bash
+pnpm db:migrate
+```
+
+To preview what would run without making changes:
+
+```bash
+pnpm db:migrate:dry-run
+```
+
+**How it works:**
+- `docker/postgres/init/01_init.sql` bootstraps a _fresh_ container (creates schema + marks `001` as applied)
+- `scripts/migrate.sh` applies any migrations not yet recorded in `schema_migrations`
+- Each migration runs inside a transaction — if it fails, all changes for that file are rolled back and the version is not recorded
+
+**Adding a new migration:**
+1. Create `docker/postgres/migrations/NNN_description.sql` (increment the number)
+2. Run `pnpm db:migrate`
 
 To connect directly with `psql`:
 
