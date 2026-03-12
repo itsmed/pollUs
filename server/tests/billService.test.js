@@ -10,6 +10,8 @@ const {
   fetchAndCacheBills,
   getBills,
   mapApiBill,
+  getBillDetail,
+  getBillText,
 } = require('../services/billService');
 
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
@@ -236,5 +238,152 @@ describe('getBills', () => {
 
     expect(result.source).toBe('api');
     expect(result.bills).toEqual([dbBill]);
+  });
+});
+
+// ─── getBillDetail ────────────────────────────────────────────────────────────
+
+describe('getBillDetail', () => {
+  const originalEnv = process.env;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    process.env = { ...originalEnv, CONGRESS_API_KEY: 'test-key' };
+    global.fetch = jest.fn();
+  });
+
+  afterEach(() => {
+    process.env = originalEnv;
+    delete global.fetch;
+  });
+
+  test('throws when CONGRESS_API_KEY is missing', async () => {
+    delete process.env.CONGRESS_API_KEY;
+    await expect(getBillDetail(119, 'hr', '134')).rejects.toThrow('CONGRESS_API_KEY');
+  });
+
+  test('fetches actions and summaries in parallel and returns with cached bill', async () => {
+    const dbBill = makeDbBill();
+    pool.query.mockResolvedValueOnce({ rows: [dbBill] });
+
+    global.fetch
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          actions: [{ actionDate: '2025-01-03', text: 'Referred to committee.', type: 'IntroReferral' }],
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          summaries: [{ text: 'This bill does X.', actionDate: '2025-01-03', actionDesc: 'Introduced' }],
+        }),
+      });
+
+    const result = await getBillDetail(119, 'hr', '134');
+
+    expect(global.fetch).toHaveBeenCalledTimes(2);
+    expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining('/actions'));
+    expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining('/summaries'));
+    expect(result.bill).toEqual(dbBill);
+    expect(result.actions).toHaveLength(1);
+    expect(result.summaries).toHaveLength(1);
+  });
+
+  test('returns null bill when not found in DB', async () => {
+    pool.query.mockResolvedValueOnce({ rows: [] });
+
+    global.fetch
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ actions: [] }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ summaries: [] }) });
+
+    const result = await getBillDetail(119, 'hr', '999');
+    expect(result.bill).toBeNull();
+  });
+
+  test('returns empty arrays when API returns no actions or summaries', async () => {
+    pool.query.mockResolvedValueOnce({ rows: [] });
+
+    global.fetch
+      .mockResolvedValueOnce({ ok: true, json: async () => ({}) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({}) });
+
+    const result = await getBillDetail(119, 'hr', '134');
+    expect(result.actions).toEqual([]);
+    expect(result.summaries).toEqual([]);
+  });
+
+  test('throws on non-ok actions response', async () => {
+    pool.query.mockResolvedValueOnce({ rows: [] });
+
+    global.fetch
+      .mockResolvedValueOnce({ ok: false, status: 404, statusText: 'Not Found' })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ summaries: [] }) });
+
+    await expect(getBillDetail(119, 'hr', '134')).rejects.toThrow('Congress.gov API error: 404 Not Found');
+  });
+
+  test('queries DB by correct api_id', async () => {
+    pool.query.mockResolvedValueOnce({ rows: [] });
+    global.fetch
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ actions: [] }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ summaries: [] }) });
+
+    await getBillDetail(119, 'hr', '134');
+    expect(pool.query).toHaveBeenCalledWith(expect.any(String), ['119/hr/134']);
+  });
+});
+
+// ─── getBillText ──────────────────────────────────────────────────────────────
+
+describe('getBillText', () => {
+  const originalEnv = process.env;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    process.env = { ...originalEnv, CONGRESS_API_KEY: 'test-key' };
+    global.fetch = jest.fn();
+  });
+
+  afterEach(() => {
+    process.env = originalEnv;
+    delete global.fetch;
+  });
+
+  test('throws when CONGRESS_API_KEY is missing', async () => {
+    delete process.env.CONGRESS_API_KEY;
+    await expect(getBillText(119, 'hr', '134')).rejects.toThrow('CONGRESS_API_KEY');
+  });
+
+  test('fetches from /text endpoint and returns textVersions', async () => {
+    const versions = [
+      {
+        date: '2025-01-03',
+        formats: [
+          { type: 'Formatted Text', url: 'https://congress.gov/bill/119/hr/134/text/ih' },
+          { type: 'PDF', url: 'https://congress.gov/bill/119/hr/134/text/ih.pdf' },
+        ],
+      },
+    ];
+
+    global.fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ textVersions: versions }),
+    });
+
+    const result = await getBillText(119, 'hr', '134');
+
+    expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining('/text'));
+    expect(result).toEqual(versions);
+  });
+
+  test('returns empty array when API returns no textVersions', async () => {
+    global.fetch.mockResolvedValueOnce({ ok: true, json: async () => ({}) });
+    expect(await getBillText(119, 'hr', '134')).toEqual([]);
+  });
+
+  test('throws on non-ok response', async () => {
+    global.fetch.mockResolvedValueOnce({ ok: false, status: 404, statusText: 'Not Found' });
+    await expect(getBillText(119, 'hr', '134')).rejects.toThrow('Congress.gov API error: 404 Not Found');
   });
 });

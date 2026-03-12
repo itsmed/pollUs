@@ -1,4 +1,10 @@
+import Link from 'next/link';
 import { type Bill } from '@/lib/api/bills';
+
+function billDetailHref(bill: Bill): string {
+  if (!bill.congress_number || !bill.bill_type || !bill.bill_number) return '#';
+  return `/bills/${bill.congress_number}/${bill.bill_type.toLowerCase()}/${bill.bill_number}`;
+}
 
 const CHAMBER_STYLES: Record<string, string> = {
   House: 'bg-green-100 text-green-800',
@@ -41,7 +47,8 @@ export default function BillCard({ bill }: BillCardProps) {
   const billLabel = bill_type && bill_number ? `${bill_type} ${bill_number}` : null;
 
   return (
-    <article className="flex flex-col gap-3 rounded-lg border border-gray-200 bg-white px-4 py-3 shadow-sm">
+    <Link href={billDetailHref(bill)} className="block focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-lg">
+    <article className="flex flex-col gap-3 rounded-lg border border-gray-200 bg-white px-4 py-3 shadow-sm transition-shadow hover:shadow-md">
       <div className="flex items-start justify-between gap-2">
         <div className="flex min-w-0 flex-wrap items-center gap-2">
           {billLabel && (
@@ -74,5 +81,6 @@ export default function BillCard({ bill }: BillCardProps) {
         </div>
       )}
     </article>
+    </Link>
   );
 }

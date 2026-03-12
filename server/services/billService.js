@@ -118,4 +118,77 @@ async function getBills() {
   return { bills, source: 'api' };
 }
 
-module.exports = { getBills, getCachedBills, fetchAndCacheBills, mapApiBill };
+/**
+ * Fetches a bill's actions and summaries from the Congress.gov API in parallel,
+ * and returns them alongside the bill's basic info from the database (if cached).
+ *
+ * Actions and summaries are always fetched fresh — they are not cached locally.
+ *
+ * @param {number|string} congress - Congress number, e.g. 119
+ * @param {string} type - Lowercase bill type, e.g. "hr" or "s"
+ * @param {string} number - Bill number, e.g. "134"
+ * @returns {Promise<{ bill: Object|null, actions: Array, summaries: Array }>}
+ */
+async function getBillDetail(congress, type, number) {
+  const apiKey = process.env.CONGRESS_API_KEY;
+  if (!apiKey) {
+    throw new Error('CONGRESS_API_KEY environment variable is not set');
+  }
+
+  const dbResult = await pool.query(
+    `SELECT ${BILL_COLUMNS} FROM bills WHERE api_id = $1`,
+    [`${congress}/${type}/${number}`]
+  );
+
+  const baseUrl = `${CONGRESS_API_BASE}/bill/${congress}/${type}/${number}`;
+  const [actionsRes, summariesRes] = await Promise.all([
+    fetch(`${baseUrl}/actions?api_key=${apiKey}&format=json&limit=250`),
+    fetch(`${baseUrl}/summaries?api_key=${apiKey}&format=json`),
+  ]);
+
+  if (!actionsRes.ok) {
+    throw new Error(`Congress.gov API error: ${actionsRes.status} ${actionsRes.statusText}`);
+  }
+  if (!summariesRes.ok) {
+    throw new Error(`Congress.gov API error: ${summariesRes.status} ${summariesRes.statusText}`);
+  }
+
+  const [actionsData, summariesData] = await Promise.all([
+    actionsRes.json(),
+    summariesRes.json(),
+  ]);
+
+  return {
+    bill: dbResult.rows[0] ?? null,
+    actions: actionsData.actions ?? [],
+    summaries: summariesData.summaries ?? [],
+  };
+}
+
+/**
+ * Fetches the available text versions for a bill from the Congress.gov API.
+ * Each version includes a date and a list of format links (HTML, PDF, XML).
+ *
+ * @param {number|string} congress
+ * @param {string} type - Lowercase bill type
+ * @param {string} number - Bill number
+ * @returns {Promise<Array>} Text version objects
+ */
+async function getBillText(congress, type, number) {
+  const apiKey = process.env.CONGRESS_API_KEY;
+  if (!apiKey) {
+    throw new Error('CONGRESS_API_KEY environment variable is not set');
+  }
+
+  const url = `${CONGRESS_API_BASE}/bill/${congress}/${type}/${number}/text?api_key=${apiKey}&format=json`;
+  const response = await fetch(url);
+
+  if (!response.ok) {
+    throw new Error(`Congress.gov API error: ${response.status} ${response.statusText}`);
+  }
+
+  const data = await response.json();
+  return data.textVersions ?? [];
+}
+
+module.exports = { getBills, getCachedBills, fetchAndCacheBills, mapApiBill, getBillDetail, getBillText };
