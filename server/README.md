@@ -25,6 +25,7 @@ Create `server/.env.development` for local development (already exists, not comm
 | `PORT` | Port to listen on (default: `4000`) |
 | `DATABASE_URL` | Full PostgreSQL connection string |
 | `CONGRESS_API_KEY` | API key from [api.congress.gov](https://api.congress.gov/sign-up/) |
+| `GEOCOD_API_KEY` | API key from [Geocodio](https://www.geocod.io/) for address → district lookup |
 
 ## Database
 
