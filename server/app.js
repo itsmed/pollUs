@@ -9,6 +9,8 @@ var usersRouter = require('./routes/users');
 var memberRouter = require('./routes/api/member');
 var representativesRouter = require('./routes/api/representatives');
 var billRouter = require('./routes/api/bill');
+var authRouter = require('./routes/api/auth');
+var authMiddleware = require('./middleware/auth');
 
 var app = express();
 
@@ -23,8 +25,11 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
+app.use(authMiddleware);
+
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
+app.use('/api/auth', authRouter);
 app.use('/api/member', memberRouter);
 app.use('/api/bill', billRouter);
 app.use('/find-representative-and-senator', representativesRouter);
