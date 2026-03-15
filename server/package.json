@@ -5,6 +5,7 @@
   "scripts": {
     "start": "node ./bin/www",
     "dev": "NODE_ENV=development ./node_modules/.bin/nodemon --exec 'tsx --env-file=.env.development.local' ./bin/www",
+    "db:setup": "tsx --env-file=.env.development.local db/setup.js",
     "test": "jest"
   },
   "jest": {
