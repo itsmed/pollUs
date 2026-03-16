@@ -10,6 +10,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
 const NAV_LINKS = [
   { href: '/bills', label: 'Bills' },
   { href: '/members', label: 'Members' },
+  { href: '/votes', label: 'Votes' },
   { href: '/find-my-reps', label: 'Find My Reps' },
 ];
 

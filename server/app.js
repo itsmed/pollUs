@@ -10,6 +10,7 @@ var memberRouter = require('./routes/api/member');
 var representativesRouter = require('./routes/api/representatives');
 var billRouter = require('./routes/api/bill');
 var authRouter = require('./routes/api/auth');
+var votesRouter = require('./routes/api/votes');
 var authMiddleware = require('./middleware/auth');
 
 var app = express();
@@ -32,6 +33,7 @@ app.use('/users', usersRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/member', memberRouter);
 app.use('/api/bill', billRouter);
+app.use('/api/votes', votesRouter);
 app.use('/find-representative-and-senator', representativesRouter);
 
 module.exports = app;

@@ -217,14 +217,94 @@ export type SJResVote = BillVoteOf<'sjres'>;
 /** Vote on a Senate concurrent resolution (S.Con.Res.). */
 export type SConResVote = BillVoteOf<'sconres'>;
 
-// ─── API response shapes ──────────────────────────────────────────────────────
+// ─── DB row shape (returned by /api/votes) ────────────────────────────────────
+// Columns are snake_case; bill/nomination/amendment fields are flat (nullable).
 
-export interface CongressionalVotesResponse {
-  source: 'cache' | 'api';
-  count: number;
-  votes: CongressionalVote[];
+export interface VoteRow {
+  id: number;
+  vote_id: string;
+  chamber: 'h' | 's';
+  congress: number;
+  session: string;
+  number: number;
+  date: string;
+  updated_at: string | null;
+  record_modified: string | null;
+  type: string;
+  category: string | null;
+  question: string;
+  subject: string | null;
+  requires: string | null;
+  result: string | null;
+  result_text: string | null;
+  source_url: string | null;
+  // Bill columns (nullable)
+  bill_congress: number | null;
+  bill_number: number | null;
+  bill_type: BillType | null;
+  bill_title: string | null;
+  // Nomination columns (nullable)
+  nomination_number: string | null;
+  nomination_title: string | null;
+  // Amendment columns (nullable)
+  amendment_number: number | null;
+  amendment_type: string | null;
+  amendment_author: string | null;
 }
 
-export interface CongressionalVoteResponse {
-  vote: CongressionalVote;
+export interface VotePositionRow {
+  legislator_id: string;
+  display_name: string | null;
+  first_name: string | null;
+  last_name: string | null;
+  party: 'D' | 'R' | 'I' | null;
+  state: string | null;
+}
+
+// ─── API response shapes ──────────────────────────────────────────────────────
+
+export interface VotesListResponse {
+  total: number;
+  limit: number;
+  offset: number;
+  chamber: 'h' | 's' | null;
+  votes: VoteRow[];
+}
+
+export interface VoteDetailResponse {
+  vote: VoteRow;
+  positions: Record<string, VotePositionRow[]>;
+  prev_vote_id: string | null;
+  next_vote_id: string | null;
+}
+
+// ─── Fetch functions ──────────────────────────────────────────────────────────
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
+
+export async function fetchVotes(
+  params: { limit?: number; offset?: number; chamber?: 'h' | 's' } = {}
+): Promise<VotesListResponse> {
+  const query = new URLSearchParams();
+  if (params.limit   != null) query.set('limit',   String(params.limit));
+  if (params.offset  != null) query.set('offset',  String(params.offset));
+  if (params.chamber != null) query.set('chamber', params.chamber);
+  const qs = query.toString();
+  const res = await fetch(`${API_URL}/api/votes${qs ? `?${qs}` : ''}`);
+  if (!res.ok) {
+    throw new Error(`Failed to fetch votes: ${res.status} ${res.statusText}`);
+  }
+  return res.json();
+}
+
+export async function fetchVoteDetail(
+  voteId: string,
+  chamber?: 'h' | 's'
+): Promise<VoteDetailResponse> {
+  const qs = chamber ? `?chamber=${chamber}` : '';
+  const res = await fetch(`${API_URL}/api/votes/${encodeURIComponent(voteId)}${qs}`);
+  if (!res.ok) {
+    throw new Error(`Failed to fetch vote detail: ${res.status} ${res.statusText}`);
+  }
+  return res.json();
 }
