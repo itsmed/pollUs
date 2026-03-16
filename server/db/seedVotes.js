@@ -115,10 +115,13 @@ async function upsertVote(client, d) {
  * @param {Record<string, object[]>} votes
  */
 async function insertPositions(client, dbId, votes) {
-  // Flatten all positions into a single array of row tuples
+  // Flatten all positions into a single array of row tuples.
+  // Some Senate votes include a bare 'VP' string entry for the Vice President
+  // acting as tie-breaker — skip any entry that is not a proper object.
   const rows = [];
   for (const [position, legislators] of Object.entries(votes)) {
     for (const leg of legislators) {
+      if (typeof leg !== 'object' || leg === null || !leg.id) continue;
       rows.push([
         dbId,
         position,
