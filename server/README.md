@@ -68,17 +68,53 @@ After SQL migrations, `db:migrate` runs `server/db/seedVotes.js` which walks eve
 
 ---
 
+## Dev User
+
+In development there is no OAuth/login flow. A seed user is created automatically by migration `004_user_profile.sql`:
+
+| Field | Value |
+|---|---|
+| `name` | `Dev User` |
+| `email` | `dev@local.dev` |
+
+The auth middleware (`server/middleware/auth.js`) detects that no `pollus_user_id` cookie is present and automatically looks up the dev user by email, then sets the cookie for that session. On every subsequent request the cookie is read and the full user row is attached to `req.user`.
+
+**Recreating the dev user on a fresh machine:**
+
+```bash
+# 1. Start Postgres
+pnpm db:up           # from repo root
+
+# 2. Apply all migrations (004 seeds dev@local.dev)
+pnpm db:migrate      # from repo root
+```
+
+Migration 004 uses `ON CONFLICT (email) DO NOTHING`, so re-running is safe. If you need to seed it manually after a reset:
+
+```sql
+INSERT INTO users (name, email) VALUES ('Dev User', 'dev@local.dev')
+  ON CONFLICT (email) DO NOTHING;
+```
+
+---
+
 ## Schema
 
 ### `users`
 
 Registered users of the application.
 
-| Column | Type | Constraints |
-|---|---|---|
-| `id` | `SERIAL` | Primary key |
-| `name` | `VARCHAR(255)` | Not null |
-| `email` | `VARCHAR(255)` | Not null, unique |
+| Column | Type | Constraints | Migration |
+|---|---|---|---|
+| `id` | `SERIAL` | Primary key | 001 |
+| `name` | `VARCHAR(255)` | Not null | 001 |
+| `email` | `VARCHAR(255)` | Not null, unique | 001 |
+| `address` | `TEXT` | Nullable — home address for rep lookup | 004 |
+| `preferences` | `JSONB` | Not null, default `{}` | 004 |
+| `senator_ids` | `INTEGER[]` | Not null, default `{}` — integer PKs from `members` | 007 |
+| `congress_member_ids` | `INTEGER[]` | Not null, default `{}` — integer PKs from `members` | 007 |
+
+`senator_ids` and `congress_member_ids` are set by `PATCH /api/auth/me` when the user looks up their address on the Find My Reps page. The client sends bioguide ID strings (e.g. `["Y000064"]`) and the server resolves them to integer member IDs before storing.
 
 ---
 
@@ -161,6 +197,72 @@ members (independent — populated from Congress.gov API cache)
 ---
 
 ## API Routes
+
+### `GET /api/auth/me`
+
+Returns the currently authenticated user. In development the dev user is returned automatically.
+
+**Response `200 OK`:**
+
+```json
+{
+  "user": {
+    "id": 1,
+    "name": "Dev User",
+    "email": "dev@local.dev",
+    "address": null,
+    "preferences": {},
+    "senator_ids": [12, 34],
+    "congress_member_ids": [56]
+  }
+}
+```
+
+**Response `401`** if no cookie / user not found.
+
+---
+
+### `PATCH /api/auth/me`
+
+Updates the current user's address, preferences, and/or saved representatives.
+
+**Request body** (all fields optional):
+
+```json
+{
+  "address": "123 Main St, Springfield, IL",
+  "preferences": { "notifications": true },
+  "senator_api_ids": ["Y000064", "B001135"],
+  "congress_member_api_ids": ["H000001"]
+}
+```
+
+`senator_api_ids` and `congress_member_api_ids` are arrays of Congress.gov bioguide ID strings. The server resolves them to integer `members.id` values and stores those in `senator_ids` / `congress_member_ids`. Both arrays are always written together — passing one resets the other to the existing value.
+
+**Response `200 OK`:** full updated `user` object (same shape as `GET /api/auth/me`).
+
+---
+
+### `GET /api/auth/me/reps`
+
+Returns the full member rows for the current user's saved representatives, split by role.
+
+**Response `200 OK`:**
+
+```json
+{
+  "senators": [
+    { "id": 12, "name": "Young, Todd", "state": "Indiana", "role": "Senator", "party": "Republican", "api_id": "Y000064", "photo_url": "..." }
+  ],
+  "representatives": [
+    { "id": 56, "name": "Banks, Jim", "state": "Indiana", "district": "3", "role": "Representative", "party": "Republican", "api_id": "B001294", "photo_url": "..." }
+  ]
+}
+```
+
+Returns `{ senators: [], representatives: [] }` when no reps are saved.
+
+---
 
 ### `GET /api/member`
 
