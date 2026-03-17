@@ -2,6 +2,12 @@
 
 const express = require('express');
 const { getVotes, getVoteDetail } = require('../../services/voteService');
+const {
+  upsertUserCongressionalVote,
+  getUserCongressionalVote,
+} = require('../../services/userCongressionalVoteService');
+
+const VALID_POSITIONS = new Set(['Yea', 'Nay', 'Abstain']);
 
 const router = express.Router();
 
@@ -61,6 +67,68 @@ router.get('/:voteId', async (req, res) => {
   } catch (err) {
     console.error('GET /api/votes/:voteId error:', err);
     res.status(500).json({ error: 'Failed to retrieve vote detail' });
+  }
+});
+
+/**
+ * GET /api/votes/:voteId/user-vote
+ *
+ * Returns the authenticated user's position on this vote, or null if they
+ * haven't voted yet.
+ *
+ * Response 200:
+ *   { vote: UserCongressionalVote | null }
+ *
+ * Response 401:
+ *   { error: string }
+ */
+router.get('/:voteId/user-vote', async (req, res) => {
+  if (!req.user) {
+    return res.status(401).json({ error: 'Not authenticated' });
+  }
+  try {
+    const vote = await getUserCongressionalVote(req.user.id, req.params.voteId);
+    res.json({ vote });
+  } catch (err) {
+    console.error('GET /api/votes/:voteId/user-vote error:', err);
+    res.status(500).json({ error: 'Failed to retrieve user vote' });
+  }
+});
+
+/**
+ * POST /api/votes/:voteId/user-vote
+ *
+ * Casts or updates the authenticated user's position on this vote.
+ *
+ * Body:
+ *   { position: 'Yea' | 'Nay' | 'Abstain' }
+ *
+ * Response 200:
+ *   { vote: UserCongressionalVote }
+ *
+ * Response 400:
+ *   { error: string }
+ *
+ * Response 401 / 404 / 500:
+ *   { error: string }
+ */
+router.post('/:voteId/user-vote', async (req, res) => {
+  if (!req.user) {
+    return res.status(401).json({ error: 'Not authenticated' });
+  }
+  const { position } = req.body;
+  if (!VALID_POSITIONS.has(position)) {
+    return res.status(400).json({ error: 'position must be one of: Yea, Nay, Abstain' });
+  }
+  try {
+    const vote = await upsertUserCongressionalVote(req.user.id, req.params.voteId, position);
+    res.json({ vote });
+  } catch (err) {
+    if (err.status === 404) {
+      return res.status(404).json({ error: 'Vote not found' });
+    }
+    console.error('POST /api/votes/:voteId/user-vote error:', err);
+    res.status(500).json({ error: 'Failed to save user vote' });
   }
 });
 

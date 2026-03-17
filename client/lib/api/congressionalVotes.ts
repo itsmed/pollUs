@@ -278,6 +278,23 @@ export interface VoteDetailResponse {
   next_vote_id: string | null;
 }
 
+// ─── User congressional vote ──────────────────────────────────────────────────
+
+export type UserVotePosition = 'Yea' | 'Nay' | 'Abstain';
+
+export interface UserCongressionalVote {
+  id: number;
+  user_id: number;
+  congressional_vote_id: number;
+  position: UserVotePosition;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface UserCongressionalVoteResponse {
+  vote: UserCongressionalVote | null;
+}
+
 // ─── Fetch functions ──────────────────────────────────────────────────────────
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
@@ -305,6 +322,38 @@ export async function fetchVoteDetail(
   const res = await fetch(`${API_URL}/api/votes/${encodeURIComponent(voteId)}${qs}`);
   if (!res.ok) {
     throw new Error(`Failed to fetch vote detail: ${res.status} ${res.statusText}`);
+  }
+  return res.json();
+}
+
+export async function fetchUserCongressionalVote(
+  voteId: string
+): Promise<UserCongressionalVoteResponse> {
+  const res = await fetch(
+    `${API_URL}/api/votes/${encodeURIComponent(voteId)}/user-vote`,
+    { credentials: 'include' }
+  );
+  if (!res.ok) {
+    throw new Error(`Failed to fetch user vote: ${res.status} ${res.statusText}`);
+  }
+  return res.json();
+}
+
+export async function castUserCongressionalVote(
+  voteId: string,
+  position: UserVotePosition
+): Promise<UserCongressionalVoteResponse> {
+  const res = await fetch(
+    `${API_URL}/api/votes/${encodeURIComponent(voteId)}/user-vote`,
+    {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ position }),
+    }
+  );
+  if (!res.ok) {
+    throw new Error(`Failed to cast user vote: ${res.status} ${res.statusText}`);
   }
   return res.json();
 }

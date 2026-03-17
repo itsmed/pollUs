@@ -3,7 +3,7 @@
 import { use } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useVoteDetail } from '@/lib/hooks/useVotes';
+import { useVoteDetail, useUserCongressionalVote } from '@/lib/hooks/useVotes';
 import { useUser } from '@/lib/context/UserContext';
 import { useMyReps } from '@/lib/hooks/useMyReps';
 import VoteDetail from '@/components/votes/VoteDetail';
@@ -49,6 +49,8 @@ export default function VoteDetailPage({ params }: { params: Promise<PageParams>
     ? chamber === 's' ? repsData.senators : repsData.representatives
     : undefined;
 
+  const { userVote, cast, isCasting } = useUserCongressionalVote(decodedId);
+
   const prevId = data?.prev_vote_id;
   const nextId = data?.next_vote_id;
 
@@ -91,7 +93,14 @@ export default function VoteDetailPage({ params }: { params: Promise<PageParams>
           <p className="text-sm text-red-500">Failed to load vote. Please try again.</p>
         )}
         {!isLoading && !isError && data && (
-          <VoteDetail vote={data.vote} positions={data.positions} myReps={myReps} />
+          <VoteDetail
+            vote={data.vote}
+            positions={data.positions}
+            myReps={myReps}
+            userVote={userVote}
+            onVote={cast}
+            isVoting={isCasting}
+          />
         )}
       </main>
     </div>

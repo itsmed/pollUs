@@ -1,9 +1,13 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   fetchVotes,
   fetchVoteDetail,
+  fetchUserCongressionalVote,
+  castUserCongressionalVote,
   type VotesListResponse,
   type VoteDetailResponse,
+  type UserCongressionalVote,
+  type UserVotePosition,
 } from '@/lib/api/congressionalVotes';
 
 interface UseVotesResult {
@@ -37,4 +41,34 @@ export function useVoteDetail(voteId: string, chamber?: 'h' | 's'): UseVoteDetai
   });
 
   return { data, isLoading, isError };
+}
+
+interface UseUserCongressionalVoteResult {
+  userVote: UserCongressionalVote | null;
+  isLoading: boolean;
+  cast: (position: UserVotePosition) => Promise<void>;
+  isCasting: boolean;
+}
+
+export function useUserCongressionalVote(voteId: string): UseUserCongressionalVoteResult {
+  const queryClient = useQueryClient();
+
+  const { data, isLoading } = useQuery({
+    queryKey: ['user-congressional-vote', voteId],
+    queryFn: () => fetchUserCongressionalVote(voteId),
+  });
+
+  const mutation = useMutation({
+    mutationFn: (position: UserVotePosition) => castUserCongressionalVote(voteId, position),
+    onSuccess: (result) => {
+      queryClient.setQueryData(['user-congressional-vote', voteId], result);
+    },
+  });
+
+  return {
+    userVote: data?.vote ?? null,
+    isLoading,
+    cast: async (position) => { await mutation.mutateAsync(position); },
+    isCasting: mutation.isPending,
+  };
 }

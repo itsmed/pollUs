@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { type VoteRow, type VotePositionRow } from '@/lib/api/congressionalVotes';
+import { type VoteRow, type VotePositionRow, type UserCongressionalVote, type UserVotePosition } from '@/lib/api/congressionalVotes';
 import { type Member } from '@/lib/api/members';
 import { fetchBillDetail, type BillDetailResponse } from '@/lib/api/bills';
 import BillDetail from '@/components/bills/BillDetail';
@@ -147,6 +147,9 @@ interface VoteDetailProps {
   vote: VoteRow;
   positions: Record<string, VotePositionRow[]>;
   myReps?: Member[];
+  userVote?: UserCongressionalVote | null;
+  onVote?: (position: UserVotePosition) => Promise<void>;
+  isVoting?: boolean;
 }
 
 function PositionSection({ label, legislators }: { label: string; legislators: VotePositionRow[] }) {
@@ -170,7 +173,7 @@ function PositionSection({ label, legislators }: { label: string; legislators: V
   );
 }
 
-export default function VoteDetail({ vote, positions, myReps }: VoteDetailProps) {
+export default function VoteDetail({ vote, positions, myReps, userVote, onVote, isVoting }: VoteDetailProps) {
   const positionEntries = Object.entries(positions);
   const repPositions = myReps
   ?.map((rep) => ({ rep, position: findPosition(rep, positions) }))
@@ -249,17 +252,57 @@ export default function VoteDetail({ vote, positions, myReps }: VoteDetailProps)
 
       {/* My reps' positions — shown instead of full positions when reps are saved */}
       {repPositions.length > 0 ? (
-        <section className="flex flex-col gap-2">
-          <h2 className="text-sm font-semibold text-gray-700">My Representatives</h2>
-          <ul className="flex flex-col gap-1">
-            {repPositions.map(({ rep, position }) => (
-              <li key={rep.api_id} className="text-sm text-gray-900">
-                <span className="font-medium">{displayName(rep.name)}</span>
-                {': '}
-                <span>{position}</span>
-              </li>
-            ))}
-          </ul>
+        <section className="flex flex-col gap-4">
+        {/* View More — fetches bill details on demand (only for bill votes) */}
+          <ViewMoreSection vote={vote} />
+          <h1 className="text-lg font-semibold text-gray-900">Votes</h1>
+
+          {/* User's own vote */}
+          <div className="flex flex-col gap-2">
+            <h2 className="text-sm font-semibold text-gray-700">
+              My Vote
+              {userVote && (
+                <span className="ml-2 font-normal text-gray-500">— {userVote.position}</span>
+              )}
+            </h2>
+            <div className="flex gap-2">
+              {(['Yea', 'Nay', 'Abstain'] as UserVotePosition[]).map((pos) => {
+                const isSelected = userVote?.position === pos;
+                return (
+                  <button
+                    key={pos}
+                    onClick={() => onVote?.(pos)}
+                    disabled={isVoting}
+                    className={`rounded-md border px-3 py-1.5 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+                      isSelected
+                        ? pos === 'Yea'
+                          ? 'border-green-400 bg-green-100 text-green-800'
+                          : pos === 'Nay'
+                          ? 'border-red-400 bg-red-100 text-red-800'
+                          : 'border-gray-400 bg-gray-200 text-gray-800'
+                        : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
+                    }`}
+                  >
+                    {pos}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Representatives' votes */}
+          <div className="flex flex-col gap-1">
+            <h2 className="text-sm font-semibold text-gray-700">My Representatives</h2>
+            <ul className="flex flex-col gap-1">
+              {repPositions.map(({ rep, position }) => (
+                <li key={rep.api_id} className="text-sm text-gray-900">
+                  <span className="font-medium">{displayName(rep.name)}</span>
+                  {': '}
+                  <span>{position}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
         </section>
       ) : (
         positionEntries.length > 0 && (
@@ -271,9 +314,6 @@ export default function VoteDetail({ vote, positions, myReps }: VoteDetailProps)
           </section>
         )
       )}
-
-      {/* View More — fetches bill details on demand (only for bill votes) */}
-      <ViewMoreSection vote={vote} />
     </div>
   );
 }
