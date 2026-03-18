@@ -6,7 +6,7 @@ A civic engagement app that lets users find their congressional representatives,
 
 | Layer | Technology |
 |---|---|
-| Frontend | Next.js 16, React 19, TypeScript |
+| Frontend | Vite 6, React 19, React Router 7, TypeScript |
 | Styling | Tailwind CSS v4, shadcn/ui |
 | Data Fetching | React Query |
 | Backend | Express.js (Node.js) |
@@ -18,7 +18,7 @@ A civic engagement app that lets users find their congressional representatives,
 
 ```
 pollus/
-├── client/             # Next.js frontend (port 3000)
+├── client/             # Vite + React SPA frontend (port 3000)
 ├── server/             # Express.js backend (port 4000)
 ├── docker/
 │   └── postgres/
@@ -55,7 +55,7 @@ pnpm dev
 This single command:
 1. Starts a PostgreSQL 16 container in Docker (port 5432) and waits for it to be healthy
 2. Starts the Express server with nodemon hot-reload (port 4000)
-3. Starts the Next.js dev server with fast refresh (port 3000)
+3. Starts the Vite dev server with HMR (port 3000)
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
 
@@ -98,11 +98,11 @@ Loaded automatically when running `pnpm dev`.
 
 ### Client — `client/.env.development`
 
-Loaded automatically by Next.js in development.
+Loaded automatically by Vite in development.
 
 | Variable | Value | Description |
 |---|---|---|
-| `NEXT_PUBLIC_API_URL` | `http://localhost:4000` | Base URL for all API calls to the Express server |
+| `VITE_API_URL` | `http://localhost:4000` | Base URL for all API calls to the Express server |
 
 ## Database
 
@@ -151,7 +151,7 @@ psql postgresql://pollus:pollus_dev@localhost:5432/pollus_dev
 Browser (3000)
     │
     ▼
-Next.js Client          ← NEXT_PUBLIC_API_URL=http://localhost:4000
+Vite SPA (static)       ← VITE_API_URL=http://localhost:4000
     │
     │ HTTP (localhost:4000)
     ▼
@@ -162,4 +162,4 @@ Express Server          ← DATABASE_URL=postgresql://...@localhost:5432/...
 PostgreSQL (Docker:5432)
 ```
 
-In production, the Express server connects to a Supabase PostgreSQL instance via the `DATABASE_URL` environment variable.
+The client is a static SPA — in production it can be deployed to any static host (Cloudflare Pages, S3 + CloudFront, Nginx, etc.) with a catch-all rule routing all paths to `index.html`. The Express server connects to a Supabase PostgreSQL instance via the `DATABASE_URL` environment variable.
