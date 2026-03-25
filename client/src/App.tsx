@@ -13,6 +13,7 @@ import VotesPage from '@/app/votes/page';
 import VoteDetailPage from '@/app/votes/[voteId]/page';
 import ProfilePage from '@/app/profile/page';
 import PreferencesPage from '@/app/preferences/page';
+import LoginPage from '@/app/login/page';
 
 export default function App() {
   const [queryClient] = useState(
@@ -43,6 +44,7 @@ export default function App() {
             <Route path="/votes/:voteId" element={<VoteDetailPage />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/preferences" element={<PreferencesPage />} />
+            <Route path="/login" element={<LoginPage />} />
           </Routes>
         </div>
       </UserProvider>
