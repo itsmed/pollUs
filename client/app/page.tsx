@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Navigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { findRepresentatives, type FindRepsResponse, type Legislator } from '@/lib/api/representatives';
 import MemberCard from '@/components/members/MemberCard';
@@ -123,30 +123,7 @@ export default function Home() {
     }
   };
 
-  // Logged-in users don't need the homepage flow
-  if (user) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-zinc-50">
-        <div className="flex flex-col items-center gap-4 text-center">
-          <h1 className="text-2xl font-semibold text-zinc-900">Welcome back, {user.name}</h1>
-          <div className="flex gap-3">
-            <Link
-              to="/bills"
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-            >
-              Browse Bills
-            </Link>
-            <Link
-              to="/profile"
-              className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100"
-            >
-              View Profile
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  if (user) return <Navigate to="/profile" replace />;
 
   return (
     <div className="flex min-h-screen flex-col bg-zinc-50">
