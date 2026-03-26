@@ -1,18 +1,10 @@
 import { Link } from 'react-router-dom';
 import { type Bill } from '@/lib/api/bills';
+import { badge, chamberBadgeByName, cardElevated, textPrimary, textSecondary, textMuted, textFaint, borderSubtle } from '@/lib/styles/tokens';
 
 function billDetailHref(bill: Bill): string {
   if (!bill.congress_number || !bill.bill_type || !bill.bill_number) return '#';
   return `/bills/${bill.congress_number}/${bill.bill_type.toLowerCase()}/${bill.bill_number}`;
-}
-
-const CHAMBER_STYLES: Record<string, string> = {
-  House: 'bg-green-100 text-green-800',
-  Senate: 'bg-purple-100 text-purple-800',
-};
-
-function chamberStyle(chamber: string | null): string {
-  return CHAMBER_STYLES[chamber ?? ''] ?? 'bg-gray-100 text-gray-700';
 }
 
 function formatDate(dateStr: string | null): string {
@@ -48,39 +40,37 @@ export default function BillCard({ bill }: BillCardProps) {
 
   return (
     <Link to={billDetailHref(bill)} className="block focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-lg">
-    <article className="flex flex-col gap-3 rounded-lg border border-gray-200 bg-white px-4 py-3 shadow-sm transition-shadow hover:shadow-md">
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex min-w-0 flex-wrap items-center gap-2">
-          {billLabel && (
-            <span className="shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-700">
-              {billLabel}
-            </span>
-          )}
-          {origin_chamber && (
-            <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${chamberStyle(origin_chamber)}`}>
-              {origin_chamber}
-            </span>
-          )}
-        </div>
-        {update_date && (
-          <p className="shrink-0 text-xs text-gray-400">Updated {formatDate(update_date)}</p>
-        )}
-      </div>
-
-      <p className="text-sm font-medium leading-snug text-gray-900">{title}</p>
-
-      {latest_action_text && (
-        <div className="border-t border-gray-100 pt-2">
-          <p className="text-xs text-gray-500">
-            <span className="font-medium text-gray-700">Latest action</span>
-            {latest_action_date && (
-              <span className="ml-1 text-gray-400">· {formatDate(latest_action_date)}</span>
+      <article className={`flex flex-col gap-3 ${cardElevated} px-4 py-3`}>
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
+            {billLabel && (
+              <span className={`shrink-0 ${badge.neutral}`}>{billLabel}</span>
             )}
-          </p>
-          <p className="mt-0.5 text-xs leading-relaxed text-gray-600">{latest_action_text}</p>
+            {origin_chamber && (
+              <span className={`shrink-0 ${chamberBadgeByName[origin_chamber] ?? badge.neutral}`}>
+                {origin_chamber}
+              </span>
+            )}
+          </div>
+          {update_date && (
+            <p className={`shrink-0 text-xs ${textFaint}`}>Updated {formatDate(update_date)}</p>
+          )}
         </div>
-      )}
-    </article>
+
+        <p className={`text-sm font-medium leading-snug ${textPrimary}`}>{title}</p>
+
+        {latest_action_text && (
+          <div className={`border-t ${borderSubtle} pt-2`}>
+            <p className={`text-xs ${textMuted}`}>
+              <span className={`font-medium ${textSecondary}`}>Latest action</span>
+              {latest_action_date && (
+                <span className={`ml-1 ${textFaint}`}>· {formatDate(latest_action_date)}</span>
+              )}
+            </p>
+            <p className={`mt-0.5 text-xs leading-relaxed ${textSecondary}`}>{latest_action_text}</p>
+          </div>
+        )}
+      </article>
     </Link>
   );
 }

@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import parse, {
   type HTMLReactParserOptions,
@@ -12,6 +11,20 @@ import {
   type BillSummary,
   type TextVersion,
 } from '@/lib/api/bills';
+import {
+  badge,
+  chamberBadgeByName,
+  btn,
+  card,
+  textPrimary,
+  textSecondary,
+  textMuted,
+  textFaint,
+  textLink,
+  borderBase,
+  borderSubtle,
+  feedback,
+} from '@/lib/styles/tokens';
 
 // Tags that must never be rendered, regardless of where they appear.
 const BLOCKED_TAGS = new Set([
@@ -24,18 +37,16 @@ const htmlParseOptions: HTMLReactParserOptions = {
     if (!(domNode instanceof Element)) return;
 
     if (BLOCKED_TAGS.has(domNode.name)) {
-      // Remove the element entirely
       return <></>;
     }
 
-    // Force all anchor links to open in a new tab safely
     if (domNode.name === 'a') {
       return (
         <a
           href={domNode.attribs.href}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-blue-600 underline hover:text-blue-800"
+          className={`${textLink} underline hover:text-blue-800 dark:hover:text-blue-300`}
         >
           {domToReact(domNode.children as DOMNode[], htmlParseOptions)}
         </a>
@@ -73,31 +84,22 @@ function TextPanel({ textVersions, isLoading, isError, onFetch }: TextPanelProps
 
   if (!fetched) {
     return (
-      <button
-        onClick={handleClick}
-        className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-medium text-blue-700 transition-colors hover:bg-blue-100"
-      >
+      <button onClick={handleClick} className={`${btn.blueOutline} px-4 py-2 text-sm`}>
         View Full Text
       </button>
     );
   }
 
-  if (isLoading) {
-    return <p className="text-sm text-gray-400">Loading text versions…</p>;
-  }
-
-  if (isError) {
-    return <p className="text-sm text-red-500">Failed to load text versions.</p>;
-  }
+  if (isLoading) return <p className={feedback.loadingText}>Loading text versions…</p>;
+  if (isError)   return <p className={feedback.errorText}>Failed to load text versions.</p>;
 
   if (textVersions.length === 0) {
-    return <p className="text-sm text-gray-400">No text versions available yet.</p>;
+    return <p className={feedback.loadingText}>No text versions available yet.</p>;
   }
 
-  // Show the most recent version's formats
   const latest = textVersions[0];
   const htmlFormat = latest.formats.find((f) => f.type === 'Formatted Text');
-  const pdfFormat = latest.formats.find((f) => f.type === 'PDF');
+  const pdfFormat  = latest.formats.find((f) => f.type === 'PDF');
 
   return (
     <div className="flex flex-wrap gap-2">
@@ -106,7 +108,7 @@ function TextPanel({ textVersions, isLoading, isError, onFetch }: TextPanelProps
           href={htmlFormat.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-medium text-blue-700 transition-colors hover:bg-blue-100"
+          className={`${btn.blueOutline} px-4 py-2 text-sm`}
         >
           Full Text (HTML)
         </a>
@@ -116,7 +118,7 @@ function TextPanel({ textVersions, isLoading, isError, onFetch }: TextPanelProps
           href={pdfFormat.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+          className={`${btn.secondary} px-4 py-2 text-sm`}
         >
           Full Text (PDF)
         </a>
@@ -127,7 +129,7 @@ function TextPanel({ textVersions, isLoading, isError, onFetch }: TextPanelProps
           href={f.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+          className={`${btn.secondary} px-4 py-2 text-sm`}
         >
           {f.type}
         </a>
@@ -174,20 +176,18 @@ export default function BillDetail({
       <div className="flex flex-col gap-2">
         <div className="flex flex-wrap items-center gap-2">
           {billLabel && (
-            <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-700">
-              {billLabel}
-            </span>
+            <span className={`shrink-0 ${badge.neutral}`}>{billLabel}</span>
           )}
           {bill?.origin_chamber && (
-            <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
+            <span className={`shrink-0 ${chamberBadgeByName[bill.origin_chamber] ?? badge.neutral}`}>
               {bill.origin_chamber}
             </span>
           )}
           {bill?.update_date && (
-            <span className="text-xs text-gray-400">Updated {formatDate(bill.update_date)}</span>
+            <span className={`text-xs ${textFaint}`}>Updated {formatDate(bill.update_date)}</span>
           )}
         </div>
-        <h1 className="text-lg font-semibold leading-snug text-gray-900">{title}</h1>
+        <h1 className={`text-lg font-semibold leading-snug ${textPrimary}`}>{title}</h1>
       </div>
 
       {/* Full text */}
@@ -201,8 +201,8 @@ export default function BillDetail({
       {/* Summary */}
       {latestSummary && (
         <section>
-          <h2 className="mb-2 text-sm font-semibold text-gray-700">Summary</h2>
-          <div className="prose prose-sm max-w-none rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm leading-relaxed text-gray-700">
+          <h2 className={`mb-2 text-sm font-semibold ${textSecondary}`}>Summary</h2>
+          <div className={`prose prose-sm max-w-none rounded-lg border ${borderBase} bg-white dark:bg-gray-900 px-4 py-3 text-sm leading-relaxed ${textSecondary}`}>
             {parse(latestSummary.text, htmlParseOptions)}
           </div>
         </section>
@@ -211,15 +211,15 @@ export default function BillDetail({
       {/* Actions timeline */}
       {actions.length > 0 && (
         <section>
-          <h2 className="mb-3 text-sm font-semibold text-gray-700">
-            Actions <span className="font-normal text-gray-400">({actions.length})</span>
+          <h2 className={`mb-3 text-sm font-semibold ${textSecondary}`}>
+            Actions <span className={`font-normal ${textFaint}`}>({actions.length})</span>
           </h2>
-          <ol className="relative border-l border-gray-200">
+          <ol className={`relative border-l ${borderBase}`}>
             {actions.map((action, i) => (
               <li key={i} className="mb-4 ml-4">
-                <div className="absolute -left-1.5 mt-1 h-3 w-3 rounded-full border border-white bg-gray-300" />
-                <time className="mb-0.5 block text-xs text-gray-400">{formatDate(action.actionDate)}</time>
-                <p className="text-sm text-gray-700">{action.text}</p>
+                <div className={`absolute -left-1.5 mt-1 h-3 w-3 rounded-full border ${borderSubtle} bg-gray-300 dark:bg-gray-600`} />
+                <time className={`mb-0.5 block text-xs ${textFaint}`}>{formatDate(action.actionDate)}</time>
+                <p className={`text-sm ${textSecondary}`}>{action.text}</p>
               </li>
             ))}
           </ol>
