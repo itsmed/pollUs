@@ -4,7 +4,6 @@ import { Routes, Route } from 'react-router-dom';
 import { UserProvider } from '@/lib/context/UserContext';
 import NavBar from '@/components/NavBar';
 import HomePage from '@/app/page';
-import FindMyRepsPage from '@/app/find-my-reps/page';
 import BillsPage from '@/app/bills/page';
 import BillDetailPage from '@/app/bills/[congress]/[type]/[number]/page';
 import MembersPage from '@/app/members/page';
@@ -35,7 +34,6 @@ export default function App() {
           <NavBar />
           <Routes>
             <Route path="/" element={<HomePage />} />
-            <Route path="/find-my-reps" element={<FindMyRepsPage />} />
             <Route path="/bills" element={<BillsPage />} />
             <Route path="/bills/:congress/:type/:number" element={<BillDetailPage />} />
             <Route path="/members" element={<MembersPage />} />

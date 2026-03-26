@@ -78,38 +78,25 @@ export default function NavBar() {
             );
           })}
 
-          {/* My reps: show names when saved, otherwise show Find My Reps link */}
-          {!isLoading && allReps.length > 0 ? (
+          {!isLoading && allReps.length > 0 &&
             allReps.map((rep) => {
               const href = `/members/${rep.api_id}`;
               const isActive = pathname === href;
               return (
-                <>
-                  <Link
-                    key={rep.api_id}
-                    to={href}
-                    className={`rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-                      isActive
+                <Link
+                  key={rep.api_id}
+                  to={href}
+                  className={`rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                    isActive
                       ? 'bg-blue-50 text-blue-600'
                       : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                   }`}
                 >
                   {rep.role + ' ' + (rep.name.includes(',') ? rep.name.split(', ').reverse().join(' ') : rep.name)}
                 </Link>
-              </>);
+              );
             })
-          ) : (
-            <Link
-              to="/find-my-reps"
-              className={`rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-                pathname === '/find-my-reps' || pathname.startsWith('/find-my-reps/')
-                  ? 'bg-blue-50 text-blue-600'
-                  : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-              }`}
-            >
-              Find My Reps
-            </Link>
-          )}
+          }
         </div>
 
         <div className="ml-auto flex items-center gap-2">
