@@ -26,10 +26,15 @@ function LegislatorSection({ title, legislators }: { title: string; legislators:
 }
 
 export default function ProfilePage() {
-  const { user, isLoading } = useUser();
+  const { user, isLoading, updateUser } = useUser();
   const [legislators, setLegislators] = useState<Legislator[]>([]);
   const [repsLoading, setRepsLoading] = useState(false);
   const [repsError, setRepsError] = useState<string | null>(null);
+
+  const [editingAddress, setEditingAddress] = useState(false);
+  const [addressInput, setAddressInput] = useState('');
+  const [addressSaving, setAddressSaving] = useState(false);
+  const [addressError, setAddressError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user?.address) return;
@@ -40,6 +45,40 @@ export default function ProfilePage() {
       .catch((err) => setRepsError(err instanceof Error ? err.message : 'Failed to load representatives'))
       .finally(() => setRepsLoading(false));
   }, [user?.address]);
+
+  const handleAddressEdit = () => {
+    setAddressInput(user?.address ?? '');
+    setAddressError(null);
+    setEditingAddress(true);
+  };
+
+  const handleAddressCancel = () => {
+    setEditingAddress(false);
+    setAddressError(null);
+  };
+
+  const handleAddressSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmed = addressInput.trim();
+    if (!trimmed) return;
+    setAddressSaving(true);
+    setAddressError(null);
+    try {
+      const data = await findRepresentatives(trimmed);
+      const senator_api_ids = data.legislators
+        .filter((l) => l.role === 'Senator')
+        .map((l) => l.api_id);
+      const congress_member_api_ids = data.legislators
+        .filter((l) => l.role === 'Representative')
+        .map((l) => l.api_id);
+      await updateUser({ address: trimmed, senator_api_ids, congress_member_api_ids });
+      setEditingAddress(false);
+    } catch (err) {
+      setAddressError(err instanceof Error ? err.message : 'Failed to update address.');
+    } finally {
+      setAddressSaving(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -78,17 +117,53 @@ export default function ProfilePage() {
           <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">Name</p>
           <p className="text-lg font-medium text-gray-900">{user.name}</p>
 
-          <p className="mt-3 text-xs font-semibold uppercase tracking-wider text-gray-400">Address</p>
-          {user.address ? (
+          <div className="mt-3 flex items-center justify-between">
+            <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">Address</p>
+            {!editingAddress && (
+              <button
+                onClick={handleAddressEdit}
+                className="text-xs font-medium text-blue-600 hover:underline"
+              >
+                {user.address ? 'Edit' : 'Add'}
+              </button>
+            )}
+          </div>
+
+          {editingAddress ? (
+            <form onSubmit={handleAddressSave} className="mt-1 flex flex-col gap-2">
+              <input
+                type="text"
+                value={addressInput}
+                onChange={(e) => setAddressInput(e.target.value)}
+                placeholder="123 Main St, Springfield, IL 62701"
+                disabled={addressSaving}
+                className="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 disabled:opacity-50"
+              />
+              {addressError && (
+                <p className="text-xs text-red-600">{addressError}</p>
+              )}
+              <div className="flex gap-2">
+                <button
+                  type="submit"
+                  disabled={addressSaving || !addressInput.trim()}
+                  className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {addressSaving ? 'Saving…' : 'Save'}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleAddressCancel}
+                  disabled={addressSaving}
+                  className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-50 disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          ) : user.address ? (
             <p className="text-sm text-gray-700">{user.address}</p>
           ) : (
-            <p className="text-sm text-gray-400">
-              No address set.{' '}
-              <Link to="/preferences" className="text-blue-600 hover:underline">
-                Add one in preferences
-              </Link>
-              .
-            </p>
+            <p className="text-sm text-gray-400">No address set.</p>
           )}
         </section>
 
