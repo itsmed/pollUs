@@ -1,5 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useUser } from '@/lib/context/UserContext';
+import { useTheme, type Theme } from '@/lib/context/ThemeContext';
 import { useMyReps } from '@/lib/hooks/useMyReps';
 import { useQueryClient } from '@tanstack/react-query';
 
@@ -10,6 +11,53 @@ const NAV_LINKS = [
   { href: '/members', label: 'Members' },
   { href: '/votes', label: 'Votes' },
 ];
+
+const THEME_CYCLE: Theme[] = ['light', 'dark', 'system'];
+const THEME_LABELS: Record<Theme, string> = { light: 'Light', dark: 'Dark', system: 'System' };
+
+function SunIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
+    </svg>
+  );
+}
+
+function MoonIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+    </svg>
+  );
+}
+
+function MonitorIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect x="2" y="3" width="20" height="14" rx="2" />
+      <path d="M8 21h8M12 17v4" />
+    </svg>
+  );
+}
+
+function ThemeToggle() {
+  const { theme, setTheme } = useTheme();
+  const next = THEME_CYCLE[(THEME_CYCLE.indexOf(theme) + 1) % THEME_CYCLE.length];
+
+  return (
+    <button
+      onClick={() => setTheme(next)}
+      title={`Theme: ${THEME_LABELS[theme]} (click for ${THEME_LABELS[next]})`}
+      className="flex items-center gap-1.5 rounded-md px-2 py-2 text-xs font-medium text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100"
+    >
+      {theme === 'light' && <SunIcon />}
+      {theme === 'dark' && <MoonIcon />}
+      {theme === 'system' && <MonitorIcon />}
+      <span className="hidden sm:inline">{THEME_LABELS[theme]}</span>
+    </button>
+  );
+}
 
 function GearIcon() {
   return (
@@ -54,9 +102,9 @@ export default function NavBar() {
   const allReps = reps ? [...reps.senators, ...reps.representatives] : [];
 
   return (
-    <nav className="shrink-0 border-b border-gray-200 bg-white">
+    <nav className="shrink-0 border-b border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-950">
       <div className="mx-auto flex max-w-7xl items-center gap-6 px-4 sm:px-6">
-        <Link to="/" className="py-4 text-sm font-semibold text-gray-900 hover:text-blue-600">
+        <Link to="/" className="py-4 text-sm font-semibold text-gray-900 hover:text-blue-600 dark:text-gray-100">
           Polis
         </Link>
 
@@ -100,6 +148,7 @@ export default function NavBar() {
         </div>
 
         <div className="ml-auto flex items-center gap-2">
+          <ThemeToggle />
           {!isLoading && user && (
             <>
               <Link

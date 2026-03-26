@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Routes, Route } from 'react-router-dom';
 import { UserProvider } from '@/lib/context/UserContext';
+import { ThemeProvider } from '@/lib/context/ThemeContext';
 import NavBar from '@/components/NavBar';
 import HomePage from '@/app/page';
 import BillsPage from '@/app/bills/page';
@@ -28,6 +29,7 @@ export default function App() {
   );
 
   return (
+    <ThemeProvider>
     <QueryClientProvider client={queryClient}>
       <UserProvider>
         <div className="flex min-h-screen flex-col">
@@ -47,5 +49,6 @@ export default function App() {
         </div>
       </UserProvider>
     </QueryClientProvider>
+    </ThemeProvider>
   );
 }
