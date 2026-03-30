@@ -14,8 +14,7 @@
     "db:migrate:dry-run": "bash scripts/migrate.sh --dry-run",
     "db:reset": "docker compose down -v && docker compose up db -d --wait",
     "build": "pnpm --filter client build",
-    "lint": "pnpm --filter client lint",
-    "install": "pnpm install --recursive"
+    "lint": "pnpm --filter client lint"
   },
   "devDependencies": {
     "concurrently": "^9.0.0"
