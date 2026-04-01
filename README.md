@@ -1,6 +1,6 @@
 # Votr
 
-A civic engagement app that lets users find their congressional representatives, browse and vote on bills, and compare their stances to their representatives' voting records. Features a Tinder-like swipe interface for exploring legislation.
+A civic engagement app that lets users find their congressional representatives, browse and vote on bills, and compare their stances to their representatives' voting records. Features a Tinder-like swipe interface for exploring legislation on mobile.
 
 ## Tech Stack
 
