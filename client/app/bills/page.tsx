@@ -1,6 +1,5 @@
-import { useBills } from '@/lib/hooks/useBills';
+import { useBills, pageShellFixed, pageHeaderColors, textPrimary, textMuted, feedback } from '@pollus/shared';
 import BillList from '@/components/bills/BillList';
-import { pageShellFixed, pageHeaderColors, textPrimary, textMuted, feedback } from '@/lib/styles/tokens';
 
 /**
  * /bills — lists the most recent bills for the current congress.

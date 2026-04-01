@@ -1,8 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useParams } from 'react-router-dom';
-import { useBillDetail, useBillText } from '@/lib/hooks/useBills';
+import { useBillDetail, useBillText, pageShell, pageHeaderColors, textLink, feedback } from '@pollus/shared';
 import BillDetail from '@/components/bills/BillDetail';
-import { pageShell, pageHeaderColors, textLink, feedback } from '@/lib/styles/tokens';
 
 /**
  * /bills/:congress/:type/:number — detailed view for a single bill.
