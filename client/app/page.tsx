@@ -36,7 +36,7 @@ function AppleIcon() {
   );
 }
 
-function toLegislatorMember(leg: Legislator, index: number) {
+function toLegislatorMember(leg: RepLegislator, index: number) {
   return { id: index, ...leg };
 }
 
