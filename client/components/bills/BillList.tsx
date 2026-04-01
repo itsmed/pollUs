@@ -1,6 +1,5 @@
-import { type Bill } from '@/lib/api/bills';
+import { type Bill, feedback } from '@pollus/shared';
 import BillCard from './BillCard';
-import { feedback } from '@/lib/styles/tokens';
 
 interface BillListProps {
   bills: Bill[];

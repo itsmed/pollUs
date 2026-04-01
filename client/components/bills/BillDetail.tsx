@@ -10,21 +10,17 @@ import {
   type BillAction,
   type BillSummary,
   type TextVersion,
-} from '@/lib/api/bills';
-import {
   badge,
   chamberBadgeByName,
   btn,
-  card,
   textPrimary,
   textSecondary,
-  textMuted,
   textFaint,
   textLink,
   borderBase,
   borderSubtle,
   feedback,
-} from '@/lib/styles/tokens';
+} from '@pollus/shared';
 
 // Tags that must never be rendered, regardless of where they appear.
 const BLOCKED_TAGS = new Set([
