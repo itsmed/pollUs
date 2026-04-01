@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useMembers, pageShellFixed, pageHeaderColors, borderBase, surface, textPrimary, textMuted, textLink, feedback } from '@pollus/shared';
+import { useMembers, pageShellFixed, pageHeaderColors, borderBase, surface, textPrimary, textMuted, textLink, feedback } from '@votr/shared';
 import MemberList from '@/components/members/MemberList';
 
 type Chamber = 'senate' | 'house';

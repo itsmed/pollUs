@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
-import { findRepresentatives, type FindRepsResponse, type RepLegislator, getApiUrl } from '@pollus/shared';
+import { findRepresentatives, type FindRepsResponse, type RepLegislator, getApiUrl } from '@votr/shared';
 import MemberCard from '@/components/members/MemberCard';
 import { useUser } from '@/lib/context/UserContext';
 import {
@@ -14,7 +14,7 @@ import {
   textLink,
   feedback,
   borderBase,
-} from '@pollus/shared';
+} from '@votr/shared';
 
 function GoogleIcon() {
   return (

@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useParams } from 'react-router-dom';
-import { useBillDetail, useBillText, pageShell, pageHeaderColors, textLink, feedback } from '@pollus/shared';
+import { useBillDetail, useBillText, pageShell, pageHeaderColors, textLink, feedback } from '@votr/shared';
 import BillDetail from '@/components/bills/BillDetail';
 
 /**

@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { type Bill, badge, chamberBadgeByName, cardElevated, textPrimary, textSecondary, textMuted, textFaint, borderSubtle } from '@pollus/shared';
+import { type Bill, badge, chamberBadgeByName, cardElevated, textPrimary, textSecondary, textMuted, textFaint, borderSubtle } from '@votr/shared';
 
 function billDetailHref(bill: Bill): string {
   if (!bill.congress_number || !bill.bill_type || !bill.bill_number) return '#';

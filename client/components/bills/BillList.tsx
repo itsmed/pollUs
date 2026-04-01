@@ -1,4 +1,4 @@
-import { type Bill, feedback } from '@pollus/shared';
+import { type Bill, feedback } from '@votr/shared';
 import BillCard from './BillCard';
 
 interface BillListProps {

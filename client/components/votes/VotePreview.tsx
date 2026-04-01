@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { type VoteRow, chamberBadgeByCode, badge, cardElevated, textPrimary, textMuted, textFaint } from '@pollus/shared';
+import { type VoteRow, chamberBadgeByCode, badge, cardElevated, textPrimary, textMuted, textFaint } from '@votr/shared';
 
 const CHAMBER_LABEL: Record<string, string> = {
   h: 'House',

@@ -1,6 +1,6 @@
-# PollUs — Server
+# Votr — Server
 
-Express.js backend for PollUs. Runs on port **4000** in development.
+Express.js backend for Votr. Runs on port **4000** in development.
 
 ## Commands
 
@@ -42,7 +42,7 @@ Create `server/.env.development` for local development (already exists, not comm
 ### Connection
 
 ```
-postgresql://pollus:pollus_dev@localhost:5432/pollus_dev
+postgresql://votr:votr_dev@localhost:5432/votr_dev
 ```
 
 The database runs in Docker (see repo root `docker-compose.yml`).
@@ -103,7 +103,7 @@ In development there is no OAuth flow. A seed user is created automatically by m
 | `name` | `Dev User` |
 | `email` | `dev@local.dev` |
 
-The auth middleware (`server/middleware/auth.js`) detects that no `pollus_user_id` cookie is present and automatically looks up the dev user by email, then sets the cookie for that session. On every subsequent request the cookie is read and the full user row is attached to `req.user`.
+The auth middleware (`server/middleware/auth.js`) detects that no `votr_user_id` cookie is present and automatically looks up the dev user by email, then sets the cookie for that session. On every subsequent request the cookie is read and the full user row is attached to `req.user`.
 
 **Recreating the dev user on a fresh machine:**
 

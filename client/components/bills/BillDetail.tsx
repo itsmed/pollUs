@@ -20,7 +20,7 @@ import {
   borderBase,
   borderSubtle,
   feedback,
-} from '@pollus/shared';
+} from '@votr/shared';
 
 // Tags that must never be rendered, regardless of where they appear.
 const BLOCKED_TAGS = new Set([

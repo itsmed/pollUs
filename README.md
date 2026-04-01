@@ -1,4 +1,4 @@
-# PollUs
+# Votr
 
 A civic engagement app that lets users find their congressional representatives, browse and vote on bills, and compare their stances to their representatives' voting records. Features a Tinder-like swipe interface for exploring legislation.
 
@@ -17,7 +17,7 @@ A civic engagement app that lets users find their congressional representatives,
 ## Project Structure
 
 ```
-pollus/
+votr/
 ├── client/             # Vite + React SPA frontend (port 3000)
 ├── server/             # Express.js backend (port 4000)
 ├── docker/
@@ -83,9 +83,9 @@ These are passed to Docker Compose for the Postgres container.
 
 | Variable            | Default      | Description       |
 | ------------------- | ------------ | ----------------- |
-| `POSTGRES_USER`     | `pollus`     | Database user     |
-| `POSTGRES_PASSWORD` | `pollus_dev` | Database password |
-| `POSTGRES_DB`       | `pollus_dev` | Database name     |
+| `POSTGRES_USER`     | `votr`     | Database user     |
+| `POSTGRES_PASSWORD` | `votr_dev` | Database password |
+| `POSTGRES_DB`       | `votr_dev` | Database name     |
 
 ### Server — `server/.env.development`
 
@@ -95,7 +95,7 @@ Loaded automatically when running `pnpm dev`.
 | ---------------------- | ---------------------------------------------------------- | ---------------------------------- |
 | `NODE_ENV`             | `development`                                              | Runtime environment                |
 | `PORT`                 | `4000`                                                     | Port the Express server listens on |
-| `DATABASE_URL`         | `postgresql://pollus:pollus_dev@localhost:5432/pollus_dev` | Postgres connection string         |
+| `DATABASE_URL`         | `postgresql://votr:votr_dev@localhost:5432/votr_dev` | Postgres connection string         |
 | `CONGRESS_API_KEY`     | `your_api_key_here`                                        | API key for the Congress API       |
 | `GEOCOD_API_KEY`       | `your_api_key_here`                                        | API key for the Geocoding API      |
 | `GOOGLE_CLIENT_ID`     | `REPLACE_ME`                                               | Google OAuth client ID             |
@@ -155,7 +155,7 @@ pnpm db:migrate:dry-run
 To connect directly with `psql`:
 
 ```bash
-psql postgresql://pollus:pollus_dev@localhost:5432/pollus_dev
+psql postgresql://votr:votr_dev@localhost:5432/votr_dev
 ```
 
 ## Architecture

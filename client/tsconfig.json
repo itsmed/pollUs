@@ -14,8 +14,8 @@
     "jsx": "react-jsx",
     "paths": {
       "@/*": ["./*"],
-      "@pollus/shared": ["../packages/shared/src/index.ts"],
-      "@pollus/shared/*": ["../packages/shared/src/*"]
+      "@votr/shared": ["../packages/shared/src/index.ts"],
+      "@votr/shared/*": ["../packages/shared/src/*"]
     }
   },
   "include": ["**/*.ts", "**/*.tsx", "**/*.mts"],

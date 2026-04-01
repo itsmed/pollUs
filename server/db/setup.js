@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * Sets up all database tables for a fresh PollUs database.
+ * Sets up all database tables for a fresh Votr database.
  *
  * Run via: pnpm db:setup
  *

@@ -1,5 +1,5 @@
 {
-  "name": "@pollus/shared",
+  "name": "@votr/shared",
   "version": "0.1.0",
   "private": true,
   "main": "./src/index.ts",

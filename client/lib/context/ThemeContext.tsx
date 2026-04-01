@@ -12,7 +12,7 @@ const ThemeContext = createContext<ThemeContextValue>({
   setTheme: () => {},
 });
 
-const STORAGE_KEY = 'pollus-theme';
+const STORAGE_KEY = 'votr-theme';
 
 function getSystemTheme(): 'light' | 'dark' {
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';

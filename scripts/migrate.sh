@@ -34,13 +34,13 @@ if [[ -f "$ENV_FILE" ]]; then
   set +o allexport
 fi
 
-DB_USER="${POSTGRES_USER:-pollus}"
-DB_NAME="${POSTGRES_DB:-pollus_dev}"
+DB_USER="${POSTGRES_USER:-votr}"
+DB_NAME="${POSTGRES_DB:-votr_dev}"
 
 # Resolve running container name (supports both docker compose v1 and v2 naming)
-CONTAINER=$(docker ps --filter "ancestor=pollus-db" --format "{{.Names}}" | head -1)
+CONTAINER=$(docker ps --filter "ancestor=votr-db" --format "{{.Names}}" | head -1)
 if [[ -z "$CONTAINER" ]]; then
-  CONTAINER=$(docker ps --filter "name=pollus-db" --format "{{.Names}}" | head -1)
+  CONTAINER=$(docker ps --filter "name=votr-db" --format "{{.Names}}" | head -1)
 fi
 if [[ -z "$CONTAINER" ]]; then
   echo "Error: no running Postgres container found. Run 'pnpm db:up' first." >&2
@@ -123,7 +123,7 @@ if [[ -f "$SEED_VOTES_SCRIPT" ]]; then
 
   # Build DATABASE_URL from the root env file if the server-specific one is absent
   if [[ ! -f "$SERVER_ENV" ]]; then
-    export DATABASE_URL="postgresql://${POSTGRES_USER:-pollus}:${POSTGRES_PASSWORD:-pollus_dev}@localhost:5432/${POSTGRES_DB:-pollus_dev}"
+    export DATABASE_URL="postgresql://${POSTGRES_USER:-votr}:${POSTGRES_PASSWORD:-votr_dev}@localhost:5432/${POSTGRES_DB:-votr_dev}"
     node "$SEED_VOTES_SCRIPT"
   else
     node --env-file="$SERVER_ENV" "$SEED_VOTES_SCRIPT"

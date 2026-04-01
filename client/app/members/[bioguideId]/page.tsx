@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useParams } from 'react-router-dom';
-import { useMemberDetail, useMemberAgreement, pageShell, pageHeaderColors, textLink, feedback } from '@pollus/shared';
+import { useMemberDetail, useMemberAgreement, pageShell, pageHeaderColors, textLink, feedback } from '@votr/shared';
 import { useUser } from '@/lib/context/UserContext';
 import MemberDetail from '@/components/members/MemberDetail';
 

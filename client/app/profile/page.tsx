@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useUser } from '@/lib/context/UserContext';
-import { findRepresentatives, type RepLegislator } from '@pollus/shared';
+import { findRepresentatives, type RepLegislator } from '@votr/shared';
 import MemberCard from '@/components/members/MemberCard';
 import {
   pageShell,
@@ -15,7 +15,7 @@ import {
   textFaint,
   textLink,
   feedback,
-} from '@pollus/shared';
+} from '@votr/shared';
 
 function toLegislatorMember(leg: RepLegislator, index: number) {
   return { id: index, ...leg };

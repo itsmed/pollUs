@@ -1,4 +1,4 @@
-import { type Member, textFaint, feedback } from '@pollus/shared';
+import { type Member, textFaint, feedback } from '@votr/shared';
 import MemberCard from './MemberCard';
 
 interface MemberListProps {

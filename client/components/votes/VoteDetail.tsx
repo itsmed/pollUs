@@ -19,7 +19,7 @@ import {
   subtleBg,
   hoverSurfaceSubtle,
   feedback,
-} from '@pollus/shared';
+} from '@votr/shared';
 import BillDetail from '@/components/bills/BillDetail';
 
 const CHAMBER_LABEL: Record<string, string> = { h: 'House', s: 'Senate' };

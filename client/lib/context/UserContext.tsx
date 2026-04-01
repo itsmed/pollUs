@@ -2,7 +2,7 @@
 
 import { createContext, useContext } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { fetchCurrentUser, updateCurrentUser, User } from '@pollus/shared';
+import { fetchCurrentUser, updateCurrentUser, User } from '@votr/shared';
 
 type UpdateUserFields = Partial<Pick<User, 'address' | 'preferences'>> & {
   senator_api_ids?: string[];

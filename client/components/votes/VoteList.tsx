@@ -1,4 +1,4 @@
-import { type VoteRow, feedback } from '@pollus/shared';
+import { type VoteRow, feedback } from '@votr/shared';
 import VotePreview from './VotePreview';
 
 interface VoteListProps {

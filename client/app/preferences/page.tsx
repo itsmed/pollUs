@@ -11,7 +11,7 @@ import {
   textMuted,
   textLink,
   feedback,
-} from '@pollus/shared';
+} from '@votr/shared';
 
 export default function PreferencesPage() {
   const { user, isLoading, updateUser } = useUser();

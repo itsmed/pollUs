@@ -1,7 +1,7 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useUser } from '@/lib/context/UserContext';
 import { useTheme, type Theme } from '@/lib/context/ThemeContext';
-import { useMyReps, navLink, btn, borderBase, surface, textPrimary, textMuted, getApiUrl } from '@pollus/shared';
+import { useMyReps, navLink, btn, borderBase, surface, textPrimary, textMuted, getApiUrl } from '@votr/shared';
 import { useQueryClient } from '@tanstack/react-query';
 
 const NAV_LINKS = [

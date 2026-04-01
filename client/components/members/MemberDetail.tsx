@@ -18,7 +18,7 @@ import {
   hoverSurfaceSubtle,
   hoverTextPrimary,
   feedback,
-} from '@pollus/shared';
+} from '@votr/shared';
 
 interface MemberDetailProps {
   member: MemberDetail;

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useVotes, pageShellFixed, pageHeaderColors, borderBase, surface, textPrimary, textMuted, textLink, feedback } from '@pollus/shared';
+import { useVotes, pageShellFixed, pageHeaderColors, borderBase, surface, textPrimary, textMuted, textLink, feedback } from '@votr/shared';
 import VoteList from '@/components/votes/VoteList';
 
 type ChamberFilter = 'all' | 'h' | 's';

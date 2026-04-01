@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { pageBg, btn, textPrimary, textMuted, borderBase, getApiUrl } from '@pollus/shared';
+import { pageBg, btn, textPrimary, textMuted, borderBase, getApiUrl } from '@votr/shared';
 
 function GoogleIcon() {
   return (
@@ -27,7 +27,7 @@ export default function LoginPage() {
       <div className={`w-full max-w-sm rounded-2xl border ${borderBase} bg-white dark:bg-gray-900 px-8 py-10 shadow-sm`}>
         <div className="mb-8 flex flex-col items-center gap-1 text-center">
           <Link to="/" className={`mb-2 text-lg font-semibold ${textPrimary} hover:text-blue-600 dark:hover:text-blue-400`}>
-            PollUs
+            Votr
           </Link>
           <h1 className={`text-xl font-semibold ${textPrimary}`}>Sign in</h1>
           <p className={`text-sm ${textMuted}`}>Continue with your Google or Apple account.</p>

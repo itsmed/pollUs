@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { type Member, partyBadge, badge, cardElevated, textPrimary, textMuted, textFaint } from '@pollus/shared';
+import { type Member, partyBadge, badge, cardElevated, textPrimary, textMuted, textFaint } from '@votr/shared';
 
 interface MemberCardProps {
   member: Member;

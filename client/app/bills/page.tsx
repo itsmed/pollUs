@@ -1,4 +1,4 @@
-import { useBills, pageShellFixed, pageHeaderColors, textPrimary, textMuted, feedback } from '@pollus/shared';
+import { useBills, pageShellFixed, pageHeaderColors, textPrimary, textMuted, feedback } from '@votr/shared';
 import BillList from '@/components/bills/BillList';
 
 /**

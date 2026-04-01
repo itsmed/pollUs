@@ -1,4 +1,4 @@
-# PollUs
+# Votr
 
 A full stack application using the [Congress.gov](https://api.congress.gov/) API
 which allows users to search for congressional representatives, bills, view
@@ -31,7 +31,7 @@ details, vote on bills, and compare their votes to their representatives' voting
   understand their representatives and hold them accountable.
 - There is a civics quiz feature that allows users to test their knowledge of the legislative process, key issues, and their representatives to promote civic education and engagement.
 - Users can provide feedback and suggestions for improving the application and
-  its features to help shape the future development of PollUs and ensure that it
+  its features to help shape the future development of Votr and ensure that it
   meets the needs and preferences of its users.
 - Both a web and mobile application.
 

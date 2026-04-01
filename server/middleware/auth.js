@@ -3,7 +3,7 @@
 const pool = require('../db');
 
 const DEV_USER_EMAIL = 'dev@local.dev';
-const COOKIE_NAME = 'pollus_user_id';
+const COOKIE_NAME = 'votr_user_id';
 const COOKIE_MAX_AGE = 365 * 24 * 60 * 60 * 1000; // 1 year
 
 /**

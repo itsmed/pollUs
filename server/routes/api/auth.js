@@ -8,7 +8,7 @@ const pool = require('../../db');
 
 const router = express.Router();
 
-const COOKIE_NAME = 'pollus_user_id';
+const COOKIE_NAME = 'votr_user_id';
 const COOKIE_MAX_AGE = 365 * 24 * 60 * 60 * 1000;
 const CLIENT_URL = process.env.CLIENT_URL ?? 'http://localhost:3000';
 
@@ -116,7 +116,7 @@ router.post('/apple/callback', (req, res, next) => {
 
 // POST /api/auth/logout — clears the session cookie
 router.post('/logout', (req, res) => {
-  res.clearCookie('pollus_user_id');
+  res.clearCookie('votr_user_id');
   res.json({ ok: true });
 });
 
