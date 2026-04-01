@@ -1,11 +1,8 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useUser } from '@/lib/context/UserContext';
 import { useTheme, type Theme } from '@/lib/context/ThemeContext';
-import { useMyReps } from '@/lib/hooks/useMyReps';
+import { useMyReps, navLink, btn, borderBase, surface, textPrimary, textMuted, getApiUrl } from '@pollus/shared';
 import { useQueryClient } from '@tanstack/react-query';
-import { navLink, btn, borderBase, surface, textPrimary, textMuted } from '@/lib/styles/tokens';
-
-const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:4000';
 
 const NAV_LINKS = [
   { href: '/bills',   label: 'Bills' },
@@ -100,7 +97,7 @@ export default function NavBar() {
   const { data: reps } = useMyReps(hasReps);
 
   async function handleLogout() {
-    await fetch(`${API_URL}/api/auth/logout`, { method: 'POST', credentials: 'include' });
+    await fetch(`${getApiUrl()}/api/auth/logout`, { method: 'POST', credentials: 'include' });
     queryClient.setQueryData(['currentUser'], null);
     queryClient.removeQueries({ queryKey: ['myReps'] });
     navigate('/');
