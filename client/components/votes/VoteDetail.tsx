@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react';
-import { type VoteRow, type VotePositionRow, type UserCongressionalVote, type UserVotePosition } from '@/lib/api/congressionalVotes';
-import { type Member } from '@/lib/api/members';
-import { fetchBillDetail, type BillDetailResponse } from '@/lib/api/bills';
-import BillDetail from '@/components/bills/BillDetail';
 import {
+  type VoteRow,
+  type VotePositionRow,
+  type UserCongressionalVote,
+  type UserVotePosition,
+  type Member,
+  fetchBillDetail,
+  type BillDetailResponse,
   badge,
   chamberBadgeByCode,
   btn,
@@ -12,13 +15,12 @@ import {
   textSecondary,
   textMuted,
   textFaint,
-  textLink,
   borderBase,
-  borderSubtle,
   subtleBg,
   hoverSurfaceSubtle,
   feedback,
-} from '@/lib/styles/tokens';
+} from '@pollus/shared';
+import BillDetail from '@/components/bills/BillDetail';
 
 const CHAMBER_LABEL: Record<string, string> = { h: 'House', s: 'Senate' };
 

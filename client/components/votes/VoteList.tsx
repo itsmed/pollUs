@@ -1,6 +1,5 @@
-import { type VoteRow } from '@/lib/api/congressionalVotes';
+import { type VoteRow, feedback } from '@pollus/shared';
 import VotePreview from './VotePreview';
-import { feedback } from '@/lib/styles/tokens';
 
 interface VoteListProps {
   votes: VoteRow[];
