@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { type MemberDetail, type AgreementResponse } from '@/lib/api/members';
-import { useMemberSharedVotes } from '@/lib/hooks/useMembers';
 import {
+  type MemberDetail,
+  type AgreementResponse,
+  useMemberSharedVotes,
   partyBadge,
   badge,
   card,
@@ -17,7 +18,7 @@ import {
   hoverSurfaceSubtle,
   hoverTextPrimary,
   feedback,
-} from '@/lib/styles/tokens';
+} from '@pollus/shared';
 
 interface MemberDetailProps {
   member: MemberDetail;

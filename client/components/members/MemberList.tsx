@@ -1,6 +1,5 @@
-import { type Member } from '@/lib/api/members';
+import { type Member, textFaint, feedback } from '@pollus/shared';
 import MemberCard from './MemberCard';
-import { textFaint, feedback } from '@/lib/styles/tokens';
 
 interface MemberListProps {
   members: Member[];
