@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
-import { findRepresentatives, type FindRepsResponse, type Legislator } from '@/lib/api/representatives';
+import { findRepresentatives, type FindRepsResponse, type RepLegislator, getApiUrl } from '@pollus/shared';
 import MemberCard from '@/components/members/MemberCard';
 import { useUser } from '@/lib/context/UserContext';
 import {
@@ -14,9 +14,7 @@ import {
   textLink,
   feedback,
   borderBase,
-} from '@/lib/styles/tokens';
-
-const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:4000';
+} from '@pollus/shared';
 
 function GoogleIcon() {
   return (
