@@ -257,20 +257,20 @@ export default function VoteDetail({ vote, positions, myReps, userVote, onVote, 
         </section>
       )}
 
-      {/* My reps' positions — shown instead of full positions when reps are saved */}
-      {repPositions.length > 0 ? (
-        <section className="flex flex-col gap-4">
-          <ViewMoreSection vote={vote} />
-          <h1 className={`text-lg font-semibold ${textPrimary}`}>Votes</h1>
+      <ViewMoreSection vote={vote} />
 
-          {/* User's own vote */}
+      <section className="flex flex-col gap-4">
+        <h2 className={`text-lg font-semibold ${textPrimary}`}>Votes</h2>
+
+        {/* User's own vote — always shown when a vote handler is provided */}
+        {onVote && (
           <div className="flex flex-col gap-2">
-            <h2 className={`text-sm font-semibold ${textSecondary}`}>
+            <h3 className={`text-sm font-semibold ${textSecondary}`}>
               My Vote
               {userVote && (
                 <span className={`ml-2 font-normal ${textMuted}`}>— {userVote.position}</span>
               )}
-            </h2>
+            </h3>
             <div className="flex gap-2">
               {(['Yea', 'Nay', 'Abstain'] as UserVotePosition[]).map((pos) => {
                 const isSelected = userVote?.position === pos;
@@ -284,7 +284,7 @@ export default function VoteDetail({ vote, positions, myReps, userVote, onVote, 
                 return (
                   <button
                     key={pos}
-                    onClick={() => onVote?.(pos)}
+                    onClick={() => onVote(pos)}
                     disabled={isVoting}
                     className={`rounded-md border px-3 py-1.5 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
                       isSelected ? selectedClass : unselectedClass
@@ -296,10 +296,12 @@ export default function VoteDetail({ vote, positions, myReps, userVote, onVote, 
               })}
             </div>
           </div>
+        )}
 
-          {/* Representatives' votes */}
+        {/* Representatives' positions — shown only when the user has saved reps */}
+        {repPositions.length > 0 && (
           <div className="flex flex-col gap-1">
-            <h2 className={`text-sm font-semibold ${textSecondary}`}>My Representatives</h2>
+            <h3 className={`text-sm font-semibold ${textSecondary}`}>My Representatives</h3>
             <ul className="flex flex-col gap-1">
               {repPositions.map(({ rep, position }) => (
                 <li key={rep.api_id} className={`text-sm ${textPrimary}`}>
@@ -310,17 +312,18 @@ export default function VoteDetail({ vote, positions, myReps, userVote, onVote, 
               ))}
             </ul>
           </div>
-        </section>
-      ) : (
-        positionEntries.length > 0 && (
-          <section className="flex flex-col gap-4">
-            <h2 className={`text-sm font-semibold ${textSecondary}`}>Positions</h2>
+        )}
+
+        {/* Full congressional positions */}
+        {positionEntries.length > 0 && (
+          <div className="flex flex-col gap-4">
+            <h3 className={`text-sm font-semibold ${textSecondary}`}>All Positions</h3>
             {positionEntries.map(([label, legislators]) => (
               <PositionSection key={label} label={label} legislators={legislators} />
             ))}
-          </section>
-        )
-      )}
+          </div>
+        )}
+      </section>
     </div>
   );
 }
