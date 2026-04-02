@@ -8,7 +8,7 @@ import {
   type VoteDetailResponse,
   type UserCongressionalVote,
   type UserVotePosition,
-} from '../api/congressionalVotes.js';
+} from '../api/congressionalVotes';
 
 interface UseVotesResult {
   data: VotesListResponse | undefined;

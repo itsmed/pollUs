@@ -1,5 +1,5 @@
-import type { Member } from './members.js';
-import { getApiUrl } from '../config.js';
+import type { Member } from './members';
+import { getApiUrl } from '../config';
 
 export interface User {
   id: number;

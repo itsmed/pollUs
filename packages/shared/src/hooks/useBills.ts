@@ -6,7 +6,7 @@ import {
   type Bill,
   type BillDetailResponse,
   type TextVersion,
-} from '../api/bills.js';
+} from '../api/bills';
 
 interface UseBillsResult {
   bills: Bill[];

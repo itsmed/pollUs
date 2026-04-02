@@ -1,4 +1,4 @@
-import { getApiUrl } from '../config.js';
+import { getApiUrl } from '../config';
 
 export interface Member {
   id: number;

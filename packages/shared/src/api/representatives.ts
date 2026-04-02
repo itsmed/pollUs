@@ -1,4 +1,4 @@
-import { getApiUrl } from '../config.js';
+import { getApiUrl } from '../config';
 
 /** Shape of a legislator returned by /find-representative-and-senator. */
 export interface RepLegislator {

@@ -8,7 +8,7 @@ import {
   type MemberDetail,
   type AgreementResponse,
   type SharedVote,
-} from '../api/members.js';
+} from '../api/members';
 
 export interface UseMembersResult {
   senators: Member[];

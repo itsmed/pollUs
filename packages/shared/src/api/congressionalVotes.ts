@@ -11,7 +11,7 @@
  * The discriminated union `CongressionalVote` covers all four variants.
  */
 
-import { getApiUrl } from '../config.js';
+import { getApiUrl } from '../config';
 
 // ─── Bill types ───────────────────────────────────────────────────────────────
 
