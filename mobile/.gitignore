@@ -1,0 +1,14 @@
+node_modules/
+.expo/
+dist/
+web-build/
+
+# Native build outputs (managed via EAS)
+android/
+ios/
+
+# Expo generated
+expo-env.d.ts
+
+# Local env
+.env*.local
