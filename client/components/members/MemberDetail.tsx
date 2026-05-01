@@ -68,7 +68,15 @@ export default function MemberDetail({ member, agreement }: MemberDetailProps) {
   const currentParty = member.partyHistory.at(-1)?.partyName ?? 'Unknown';
   const latestTerm = member.terms.at(-1);
   const role = latestTerm?.memberType ?? 'Member';
-
+  const terms = {
+    'house': member.terms.filter((t) => t.chamber.toLowerCase().includes('house')),
+    'senate': member.terms.filter((t) => t.chamber.toLowerCase().includes('senate')),
+  }
+  const congressionalServiceLength = member.terms.reduce((total, term) => {
+    const start = term.startYear;
+    const end = term.endYear ?? new Date().getFullYear();
+    return total + (end - start);
+  }, 0);
   const [showSharedVotes, setShowSharedVotes] = useState(false);
   const { votes, isLoading: votesLoading, isError: votesError } = useMemberSharedVotes(
     member.bioguideId,
@@ -100,6 +108,12 @@ export default function MemberDetail({ member, agreement }: MemberDetailProps) {
             {member.currentMember && (
               <span className={badge.green}>Current Member</span>
             )}
+            <p>Served for {congressionalServiceLength} year{congressionalServiceLength !== 1 ? 's' : ''} total in Congress.</p>
+            <span className={`${badge.neutral}`}>
+              {member.terms.length} term{member.terms.length !== 1 ? 's' : ''}
+              {terms.house.length > 0 && `, ${terms.house.length} in the House`}
+              {terms.senate.length > 0 && `, ${terms.senate.length} in the Senate`}
+            </span>
           </div>
         </div>
       </div>
