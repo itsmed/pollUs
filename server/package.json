@@ -7,7 +7,8 @@
     "dev": "NODE_ENV=development ./node_modules/.bin/nodemon --exec 'tsx --env-file=.env.development.local' ./bin/www",
     "db:setup": "tsx --env-file=.env.development.local db/setup.js",
     "db:seed-votes": "node --env-file=.env.development.local db/seedVotes.js",
-    "test": "jest"
+    "test": "jest",
+    "lint": "eslint ."
   },
   "jest": {
     "testEnvironment": "node",
@@ -30,11 +31,14 @@
     "pg": "^8.20.0"
   },
   "devDependencies": {
+    "@eslint/js": "^9",
     "@types/cors": "^2.8.19",
+    "eslint": "^9",
     "jest": "^30.3.0",
     "nodemon": "^3.1.14",
     "ts-jest": "^29.4.6",
     "tsx": "^4.21.0",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8"
   }
 }
