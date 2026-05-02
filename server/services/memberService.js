@@ -1,10 +1,10 @@
-'use strict';
+"use strict";
 
-const pool = require('../db');
+const pool = require("../db");
 
-const CONGRESS_API_BASE = 'https://api.congress.gov/v3';
+const CONGRESS_API_BASE = "https://api.congress.gov/v3";
 const MEMBER_LIST_LIMIT = 250;
-import  { CURRENT_CONGRESS } from '../CONSTANTS';
+import { CURRENT_CONGRESS } from "../CONSTANTS";
 
 /**
  * Returns all members from the database cache.
@@ -12,7 +12,7 @@ import  { CURRENT_CONGRESS } from '../CONSTANTS';
  */
 async function getCachedMembers() {
   const result = await pool.query(
-    'SELECT id, name, state, district, role, party, photo_url, api_id FROM members ORDER BY name ASC'
+    "SELECT id, name, state, district, role, party, photo_url, api_id FROM members ORDER BY name ASC",
   );
   return result.rows;
 }
@@ -23,15 +23,14 @@ async function getCachedMembers() {
  * @returns {Object} Mapped member object.
  */
 function mapApiMember(apiMember) {
-  const latestTerm = apiMember.terms?.item?.at(-1);
   const isRepresentative = apiMember.district != null;
 
   return {
     name: apiMember.name,
     state: apiMember.state,
     district: isRepresentative ? String(apiMember.district) : null,
-    role: isRepresentative ? 'Representative' : 'Senator',
-    party: apiMember.partyName ?? 'Unknown',
+    role: isRepresentative ? "Representative" : "Senator",
+    party: apiMember.partyName ?? "Unknown",
     api_id: apiMember.bioguideId,
     photo_url: apiMember.depiction?.imageUrl ?? null,
   };
@@ -45,7 +44,7 @@ function mapApiMember(apiMember) {
 async function fetchAndCacheMembers() {
   const apiKey = process.env.CONGRESS_API_KEY;
   if (!apiKey) {
-    throw new Error('CONGRESS_API_KEY environment variable is not set');
+    throw new Error("CONGRESS_API_KEY environment variable is not set");
   }
 
   const allMembers = [];
@@ -57,7 +56,9 @@ async function fetchAndCacheMembers() {
     const response = await fetch(url);
 
     if (!response.ok) {
-      throw new Error(`Congress.gov API error: ${response.status} ${response.statusText}`);
+      throw new Error(
+        `Congress.gov API error: ${response.status} ${response.statusText}`,
+      );
     }
 
     const data = await response.json();
@@ -75,7 +76,7 @@ async function fetchAndCacheMembers() {
 
   const client = await pool.connect();
   try {
-    await client.query('BEGIN');
+    await client.query("BEGIN");
 
     const inserted = [];
     for (const apiMember of allMembers) {
@@ -91,15 +92,15 @@ async function fetchAndCacheMembers() {
            party     = EXCLUDED.party,
            photo_url = EXCLUDED.photo_url
          RETURNING id, name, state, district, role, party, photo_url, api_id`,
-        [m.name, m.state, m.district, m.role, m.party, m.api_id, m.photo_url]
+        [m.name, m.state, m.district, m.role, m.party, m.api_id, m.photo_url],
       );
       inserted.push(result.rows[0]);
     }
 
-    await client.query('COMMIT');
+    await client.query("COMMIT");
     return inserted;
   } catch (err) {
-    await client.query('ROLLBACK');
+    await client.query("ROLLBACK");
     throw err;
   } finally {
     client.release();
@@ -114,11 +115,11 @@ async function fetchAndCacheMembers() {
 async function getMembers() {
   const cached = await getCachedMembers();
   if (cached.length > 0) {
-    return { members: cached, source: 'cache' };
+    return { members: cached, source: "cache" };
   }
 
   const members = await fetchAndCacheMembers();
-  return { members, source: 'api' };
+  return { members, source: "api" };
 }
 
 /**
@@ -131,14 +132,16 @@ async function getMembers() {
 async function getMemberDetail(bioguideId) {
   const apiKey = process.env.CONGRESS_API_KEY;
   if (!apiKey) {
-    throw new Error('CONGRESS_API_KEY environment variable is not set');
+    throw new Error("CONGRESS_API_KEY environment variable is not set");
   }
 
   const url = `${CONGRESS_API_BASE}/member/${bioguideId}?api_key=${apiKey}&format=json`;
   const response = await fetch(url);
 
   if (!response.ok) {
-    throw new Error(`Congress.gov API error: ${response.status} ${response.statusText}`);
+    throw new Error(
+      `Congress.gov API error: ${response.status} ${response.statusText}`,
+    );
   }
 
   const data = await response.json();
@@ -167,8 +170,8 @@ async function getMemberDetail(bioguideId) {
 async function getMemberAgreement(userId, bioguideId) {
   // Look up the cached member row to determine role, name, and party.
   const memberResult = await pool.query(
-    'SELECT role, name, party FROM members WHERE api_id = $1',
-    [bioguideId]
+    "SELECT role, name, party FROM members WHERE api_id = $1",
+    [bioguideId],
   );
 
   if (memberResult.rows.length === 0) {
@@ -176,7 +179,7 @@ async function getMemberAgreement(userId, bioguideId) {
   }
 
   const { role, name, party } = memberResult.rows[0];
-  const isSenator = role === 'Senator';
+  const isSenator = role === "Senator";
 
   let rows;
 
@@ -195,14 +198,16 @@ async function getMemberAgreement(userId, bioguideId) {
          AND vp.legislator_id = $1
        WHERE ucv.user_id = $2
          AND ucv.position IN ('Yea', 'Nay')`,
-      [bioguideId, userId]
+      [bioguideId, userId],
     ));
   } else {
     // Senate: match by last_name + party initial (LIS IDs differ from bioguide)
-    const lastName = name.split(',')[0].trim();
-    const partyInitial = party.startsWith('Democrat') ? 'D'
-      : party.startsWith('Republican') ? 'R'
-      : 'I';
+    const lastName = name.split(",")[0].trim();
+    const partyInitial = party.startsWith("Democrat")
+      ? "D"
+      : party.startsWith("Republican")
+        ? "R"
+        : "I";
 
     ({ rows } = await pool.query(
       `SELECT
@@ -218,7 +223,7 @@ async function getMemberAgreement(userId, bioguideId) {
          AND vp.party = $2
        WHERE ucv.user_id = $3
          AND ucv.position IN ('Yea', 'Nay')`,
-      [lastName, partyInitial, userId]
+      [lastName, partyInitial, userId],
     ));
   }
 
@@ -240,14 +245,14 @@ async function getMemberAgreement(userId, bioguideId) {
  */
 async function getMemberSharedVotes(userId, bioguideId) {
   const memberResult = await pool.query(
-    'SELECT role, name, party FROM members WHERE api_id = $1',
-    [bioguideId]
+    "SELECT role, name, party FROM members WHERE api_id = $1",
+    [bioguideId],
   );
 
   if (memberResult.rows.length === 0) return [];
 
   const { role, name, party } = memberResult.rows[0];
-  const isSenator = role === 'Senator';
+  const isSenator = role === "Senator";
 
   const agreedExpr = `
     CASE WHEN
@@ -274,13 +279,15 @@ async function getMemberSharedVotes(userId, bioguideId) {
        WHERE ucv.user_id = $2
          AND ucv.position IN ('Yea', 'Nay')
        ORDER BY cv.date DESC`,
-      [bioguideId, userId]
+      [bioguideId, userId],
     ));
   } else {
-    const lastName = name.split(',')[0].trim();
-    const partyInitial = party.startsWith('Democrat') ? 'D'
-      : party.startsWith('Republican') ? 'R'
-      : 'I';
+    const lastName = name.split(",")[0].trim();
+    const partyInitial = party.startsWith("Democrat")
+      ? "D"
+      : party.startsWith("Republican")
+        ? "R"
+        : "I";
 
     ({ rows } = await pool.query(
       `SELECT
@@ -299,11 +306,19 @@ async function getMemberSharedVotes(userId, bioguideId) {
        WHERE ucv.user_id = $3
          AND ucv.position IN ('Yea', 'Nay')
        ORDER BY cv.date DESC`,
-      [lastName, partyInitial, userId]
+      [lastName, partyInitial, userId],
     ));
   }
 
   return rows;
 }
 
-module.exports = { getMembers, getCachedMembers, fetchAndCacheMembers, mapApiMember, getMemberDetail, getMemberAgreement, getMemberSharedVotes };
+module.exports = {
+  getMembers,
+  getCachedMembers,
+  fetchAndCacheMembers,
+  mapApiMember,
+  getMemberDetail,
+  getMemberAgreement,
+  getMemberSharedVotes,
+};
