@@ -1,18 +1,18 @@
-'use strict';
-
 jest.mock('../db', () => ({
   query: jest.fn(),
 }));
 
-const pool = require('../db');
-const {
+import pool from '../db';
+import {
   getCachedBills,
   fetchAndCacheBills,
   getBills,
   mapApiBill,
   getBillDetail,
   getBillText,
-} = require('../services/billService');
+} from '../services/billService';
+
+const mockPool = pool as jest.Mocked<typeof pool>;
 
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
 
@@ -96,27 +96,27 @@ describe('getCachedBills', () => {
 
   test('returns rows from the database', async () => {
     const rows = [makeDbBill()];
-    pool.query.mockResolvedValueOnce({ rows });
+    mockPool.query.mockResolvedValueOnce({ rows } as never);
 
     const result = await getCachedBills();
 
-    expect(pool.query).toHaveBeenCalledWith(expect.stringContaining('SELECT'), [119]);
+    expect(mockPool.query).toHaveBeenCalledWith(expect.stringContaining('SELECT'), [119]);
     expect(result).toEqual(rows);
   });
 
   test('filters by current congress number', async () => {
-    pool.query.mockResolvedValueOnce({ rows: [] });
+    mockPool.query.mockResolvedValueOnce({ rows: [] } as never);
     await getCachedBills();
-    expect(pool.query).toHaveBeenCalledWith(expect.any(String), [119]);
+    expect(mockPool.query).toHaveBeenCalledWith(expect.any(String), [119]);
   });
 
   test('returns empty array when no bills cached', async () => {
-    pool.query.mockResolvedValueOnce({ rows: [] });
+    mockPool.query.mockResolvedValueOnce({ rows: [] } as never);
     expect(await getCachedBills()).toEqual([]);
   });
 
   test('propagates database errors', async () => {
-    pool.query.mockRejectedValueOnce(new Error('DB error'));
+    (mockPool.query as jest.Mock).mockRejectedValueOnce(new Error('DB error'));
     await expect(getCachedBills()).rejects.toThrow('DB error');
   });
 });
@@ -129,12 +129,12 @@ describe('fetchAndCacheBills', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     process.env = { ...originalEnv, CONGRESS_API_KEY: 'test-key' };
-    global.fetch = jest.fn();
+    global.fetch = jest.fn() as typeof global.fetch;
   });
 
   afterEach(() => {
     process.env = originalEnv;
-    delete global.fetch;
+    delete (global as Record<string, unknown>).fetch;
   });
 
   test('throws when CONGRESS_API_KEY is missing', async () => {
@@ -146,16 +146,16 @@ describe('fetchAndCacheBills', () => {
     const apiBill = makeApiBill();
     const dbBill = makeDbBill();
 
-    global.fetch.mockResolvedValueOnce({
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: true,
       json: async () => ({ bills: [apiBill] }),
     });
-    pool.query.mockResolvedValueOnce({ rows: [dbBill] });
+    mockPool.query.mockResolvedValueOnce({ rows: [dbBill] } as never);
 
     const result = await fetchAndCacheBills();
 
     expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining('/bill/119'));
-    expect(pool.query).toHaveBeenCalledWith(
+    expect(mockPool.query).toHaveBeenCalledWith(
       expect.stringContaining('ON CONFLICT (api_id) DO UPDATE'),
       expect.any(Array)
     );
@@ -166,32 +166,32 @@ describe('fetchAndCacheBills', () => {
     const bill1 = makeApiBill({ number: '1' });
     const bill2 = makeApiBill({ number: '2', title: 'Second Bill' });
 
-    global.fetch.mockResolvedValueOnce({
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: true,
       json: async () => ({ bills: [bill1, bill2] }),
     });
-    pool.query
-      .mockResolvedValueOnce({ rows: [makeDbBill({ bill_number: '1' })] })
-      .mockResolvedValueOnce({ rows: [makeDbBill({ id: 2, bill_number: '2', title: 'Second Bill' })] });
+    mockPool.query
+      .mockResolvedValueOnce({ rows: [makeDbBill({ bill_number: '1' })] } as never)
+      .mockResolvedValueOnce({ rows: [makeDbBill({ id: 2, bill_number: '2', title: 'Second Bill' })] } as never);
 
     const result = await fetchAndCacheBills();
 
-    expect(pool.query).toHaveBeenCalledTimes(2);
+    expect(mockPool.query).toHaveBeenCalledTimes(2);
     expect(result).toHaveLength(2);
   });
 
   test('returns empty array when API returns no bills', async () => {
-    global.fetch.mockResolvedValueOnce({
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: true,
       json: async () => ({ bills: [] }),
     });
 
     expect(await fetchAndCacheBills()).toEqual([]);
-    expect(pool.query).not.toHaveBeenCalled();
+    expect(mockPool.query).not.toHaveBeenCalled();
   });
 
   test('throws on non-ok API response', async () => {
-    global.fetch.mockResolvedValueOnce({ ok: false, status: 429, statusText: 'Too Many Requests' });
+    (global.fetch as jest.Mock).mockResolvedValueOnce({ ok: false, status: 429, statusText: 'Too Many Requests' });
     await expect(fetchAndCacheBills()).rejects.toThrow('Congress.gov API error: 429 Too Many Requests');
   });
 });
@@ -204,17 +204,17 @@ describe('getBills', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     process.env = { ...originalEnv, CONGRESS_API_KEY: 'test-key' };
-    global.fetch = jest.fn();
+    global.fetch = jest.fn() as typeof global.fetch;
   });
 
   afterEach(() => {
     process.env = originalEnv;
-    delete global.fetch;
+    delete (global as Record<string, unknown>).fetch;
   });
 
   test('returns cache when bills exist in DB', async () => {
     const cached = [makeDbBill()];
-    pool.query.mockResolvedValueOnce({ rows: cached });
+    mockPool.query.mockResolvedValueOnce({ rows: cached } as never);
 
     const result = await getBills();
 
@@ -225,11 +225,11 @@ describe('getBills', () => {
 
   test('fetches from API when DB is empty', async () => {
     const dbBill = makeDbBill();
-    pool.query
-      .mockResolvedValueOnce({ rows: [] })          // cache miss
-      .mockResolvedValueOnce({ rows: [dbBill] });   // upsert
+    mockPool.query
+      .mockResolvedValueOnce({ rows: [] } as never)
+      .mockResolvedValueOnce({ rows: [dbBill] } as never);
 
-    global.fetch.mockResolvedValueOnce({
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: true,
       json: async () => ({ bills: [makeApiBill()] }),
     });
@@ -249,12 +249,12 @@ describe('getBillDetail', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     process.env = { ...originalEnv, CONGRESS_API_KEY: 'test-key' };
-    global.fetch = jest.fn();
+    global.fetch = jest.fn() as typeof global.fetch;
   });
 
   afterEach(() => {
     process.env = originalEnv;
-    delete global.fetch;
+    delete (global as Record<string, unknown>).fetch;
   });
 
   test('throws when CONGRESS_API_KEY is missing', async () => {
@@ -264,9 +264,9 @@ describe('getBillDetail', () => {
 
   test('fetches actions and summaries in parallel and returns with cached bill', async () => {
     const dbBill = makeDbBill();
-    pool.query.mockResolvedValueOnce({ rows: [dbBill] });
+    mockPool.query.mockResolvedValueOnce({ rows: [dbBill] } as never);
 
-    global.fetch
+    (global.fetch as jest.Mock)
       .mockResolvedValueOnce({
         ok: true,
         json: async () => ({
@@ -291,9 +291,9 @@ describe('getBillDetail', () => {
   });
 
   test('returns null bill when not found in DB', async () => {
-    pool.query.mockResolvedValueOnce({ rows: [] });
+    mockPool.query.mockResolvedValueOnce({ rows: [] } as never);
 
-    global.fetch
+    (global.fetch as jest.Mock)
       .mockResolvedValueOnce({ ok: true, json: async () => ({ actions: [] }) })
       .mockResolvedValueOnce({ ok: true, json: async () => ({ summaries: [] }) });
 
@@ -302,9 +302,9 @@ describe('getBillDetail', () => {
   });
 
   test('returns empty arrays when API returns no actions or summaries', async () => {
-    pool.query.mockResolvedValueOnce({ rows: [] });
+    mockPool.query.mockResolvedValueOnce({ rows: [] } as never);
 
-    global.fetch
+    (global.fetch as jest.Mock)
       .mockResolvedValueOnce({ ok: true, json: async () => ({}) })
       .mockResolvedValueOnce({ ok: true, json: async () => ({}) });
 
@@ -314,9 +314,9 @@ describe('getBillDetail', () => {
   });
 
   test('throws on non-ok actions response', async () => {
-    pool.query.mockResolvedValueOnce({ rows: [] });
+    mockPool.query.mockResolvedValueOnce({ rows: [] } as never);
 
-    global.fetch
+    (global.fetch as jest.Mock)
       .mockResolvedValueOnce({ ok: false, status: 404, statusText: 'Not Found' })
       .mockResolvedValueOnce({ ok: true, json: async () => ({ summaries: [] }) });
 
@@ -324,13 +324,13 @@ describe('getBillDetail', () => {
   });
 
   test('queries DB by correct api_id', async () => {
-    pool.query.mockResolvedValueOnce({ rows: [] });
-    global.fetch
+    mockPool.query.mockResolvedValueOnce({ rows: [] } as never);
+    (global.fetch as jest.Mock)
       .mockResolvedValueOnce({ ok: true, json: async () => ({ actions: [] }) })
       .mockResolvedValueOnce({ ok: true, json: async () => ({ summaries: [] }) });
 
     await getBillDetail(119, 'hr', '134');
-    expect(pool.query).toHaveBeenCalledWith(expect.any(String), ['119/hr/134']);
+    expect(mockPool.query).toHaveBeenCalledWith(expect.any(String), ['119/hr/134']);
   });
 });
 
@@ -342,12 +342,12 @@ describe('getBillText', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     process.env = { ...originalEnv, CONGRESS_API_KEY: 'test-key' };
-    global.fetch = jest.fn();
+    global.fetch = jest.fn() as typeof global.fetch;
   });
 
   afterEach(() => {
     process.env = originalEnv;
-    delete global.fetch;
+    delete (global as Record<string, unknown>).fetch;
   });
 
   test('throws when CONGRESS_API_KEY is missing', async () => {
@@ -366,7 +366,7 @@ describe('getBillText', () => {
       },
     ];
 
-    global.fetch.mockResolvedValueOnce({
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: true,
       json: async () => ({ textVersions: versions }),
     });
@@ -378,12 +378,12 @@ describe('getBillText', () => {
   });
 
   test('returns empty array when API returns no textVersions', async () => {
-    global.fetch.mockResolvedValueOnce({ ok: true, json: async () => ({}) });
+    (global.fetch as jest.Mock).mockResolvedValueOnce({ ok: true, json: async () => ({}) });
     expect(await getBillText(119, 'hr', '134')).toEqual([]);
   });
 
   test('throws on non-ok response', async () => {
-    global.fetch.mockResolvedValueOnce({ ok: false, status: 404, statusText: 'Not Found' });
+    (global.fetch as jest.Mock).mockResolvedValueOnce({ ok: false, status: 404, statusText: 'Not Found' });
     await expect(getBillText(119, 'hr', '134')).rejects.toThrow('Congress.gov API error: 404 Not Found');
   });
 });

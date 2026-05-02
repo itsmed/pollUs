@@ -1,8 +1,6 @@
-'use strict';
-
 jest.mock('../CONSTANTS', () => ({ CURRENT_CONGRESS: 119 }));
 
-const { findLegislators, mapGeocodioLegislator } = require('../services/geocodioService');
+import { findLegislators, mapGeocodioLegislator } from '../services/geocodioService';
 
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
 
@@ -65,7 +63,7 @@ const makeGeocodioResult = (overrides = {}) => ({
 
 describe('mapGeocodioLegislator', () => {
   test('maps a representative correctly', () => {
-    const result = mapGeocodioLegislator(makeGeocodioLegislator(), 'VA', 8);
+    const result = mapGeocodioLegislator(makeGeocodioLegislator() as never, 'VA', 8);
     expect(result).toEqual({
       name: 'Donald Beyer',
       role: 'Representative',
@@ -78,7 +76,7 @@ describe('mapGeocodioLegislator', () => {
   });
 
   test('maps a senator correctly — no district', () => {
-    const result = mapGeocodioLegislator(makeSenator(), 'VA', 8);
+    const result = mapGeocodioLegislator(makeSenator() as never, 'VA', 8);
     expect(result.role).toBe('Senator');
     expect(result.district).toBeNull();
     expect(result.name).toBe('Tim Kaine');
@@ -87,16 +85,16 @@ describe('mapGeocodioLegislator', () => {
 
   test('defaults party to "Unknown" when bio.party is missing', () => {
     const leg = makeGeocodioLegislator({ bio: { ...makeGeocodioLegislator().bio, party: undefined } });
-    expect(mapGeocodioLegislator(leg, 'VA', 8).party).toBe('Unknown');
+    expect(mapGeocodioLegislator(leg as never, 'VA', 8).party).toBe('Unknown');
   });
 
   test('sets photo_url to null when bio.photo_url is missing', () => {
     const leg = makeGeocodioLegislator({ bio: { ...makeGeocodioLegislator().bio, photo_url: undefined } });
-    expect(mapGeocodioLegislator(leg, 'VA', 8).photo_url).toBeNull();
+    expect(mapGeocodioLegislator(leg as never, 'VA', 8).photo_url).toBeNull();
   });
 
   test('sets district to null when districtNumber is null', () => {
-    expect(mapGeocodioLegislator(makeGeocodioLegislator(), 'VA', null).district).toBeNull();
+    expect(mapGeocodioLegislator(makeGeocodioLegislator() as never, 'VA', null).district).toBeNull();
   });
 });
 
@@ -108,23 +106,21 @@ describe('findLegislators', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     process.env = { ...originalEnv, GEOCOD_API_KEY: 'test-key' };
-    global.fetch = jest.fn();
+    global.fetch = jest.fn() as typeof global.fetch;
   });
 
   afterEach(() => {
     process.env = originalEnv;
-    delete global.fetch;
+    delete (global as Record<string, unknown>).fetch;
   });
 
   test('throws when GEOCOD_API_KEY is missing', async () => {
     delete process.env.GEOCOD_API_KEY;
-    await expect(findLegislators('1109 N Highland St, Arlington VA')).rejects.toThrow(
-      'GEOCOD_API_KEY'
-    );
+    await expect(findLegislators('1109 N Highland St, Arlington VA')).rejects.toThrow('GEOCOD_API_KEY');
   });
 
   test('calls Geocodio with cd119 field and returns mapped legislators', async () => {
-    global.fetch.mockResolvedValueOnce({
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: true,
       json: async () => ({ results: [makeGeocodioResult()] }),
     });
@@ -139,7 +135,7 @@ describe('findLegislators', () => {
   });
 
   test('returns one representative and one senator', async () => {
-    global.fetch.mockResolvedValueOnce({
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: true,
       json: async () => ({ results: [makeGeocodioResult()] }),
     });
@@ -150,20 +146,18 @@ describe('findLegislators', () => {
     const sen = legislators.find((l) => l.role === 'Senator');
 
     expect(rep).toBeDefined();
-    expect(rep.district).toBe('8');
+    expect(rep!.district).toBe('8');
     expect(sen).toBeDefined();
-    expect(sen.district).toBeNull();
+    expect(sen!.district).toBeNull();
   });
 
   test('throws on non-ok API response', async () => {
-    global.fetch.mockResolvedValueOnce({ ok: false, status: 422, statusText: 'Unprocessable Entity' });
-    await expect(findLegislators('bad address')).rejects.toThrow(
-      'Geocodio API error: 422 Unprocessable Entity'
-    );
+    (global.fetch as jest.Mock).mockResolvedValueOnce({ ok: false, status: 422, statusText: 'Unprocessable Entity' });
+    await expect(findLegislators('bad address')).rejects.toThrow('Geocodio API error: 422 Unprocessable Entity');
   });
 
   test('throws when no results returned', async () => {
-    global.fetch.mockResolvedValueOnce({
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: true,
       json: async () => ({ results: [] }),
     });
@@ -174,7 +168,7 @@ describe('findLegislators', () => {
     const resultWithNoDistrict = makeGeocodioResult({
       fields: { congressional_districts: [] },
     });
-    global.fetch.mockResolvedValueOnce({
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: true,
       json: async () => ({ results: [resultWithNoDistrict] }),
     });
@@ -203,7 +197,7 @@ describe('findLegislators', () => {
       },
     });
 
-    global.fetch.mockResolvedValueOnce({
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: true,
       json: async () => ({ results: [resultWithTwo] }),
     });
@@ -213,14 +207,14 @@ describe('findLegislators', () => {
   });
 
   test('encodes address in query string', async () => {
-    global.fetch.mockResolvedValueOnce({
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: true,
       json: async () => ({ results: [makeGeocodioResult()] }),
     });
 
     await findLegislators('123 Main St, Springfield IL');
 
-    const calledUrl = global.fetch.mock.calls[0][0];
+    const calledUrl = (global.fetch as jest.Mock).mock.calls[0][0] as string;
     expect(calledUrl).toContain('123+Main+St');
   });
 });
