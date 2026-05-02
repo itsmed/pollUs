@@ -1,16 +1,14 @@
-'use strict';
+import pool from '../db';
 
-const pool = require('../db');
+interface GetVotesOptions {
+  limit?: number;
+  offset?: number;
+  chamber?: string;
+}
 
-/**
- * Returns a page of vote records from the database, ordered by date descending.
- *
- * @param {{ limit?: number, offset?: number, chamber?: 'h'|'s' }} opts
- * @returns {Promise<{ votes: object[], total: number }>}
- */
-async function getVotes({ limit = 50, offset = 0, chamber } = {}) {
-  // The rows query has limit=$1, offset=$2, chamber=$3 (if present).
-  // The count query is independent and uses chamber=$1 (if present).
+async function getVotes(
+  { limit = 50, offset = 0, chamber }: GetVotesOptions = {}
+): Promise<{ votes: unknown[]; total: number }> {
   const rowsParams = chamber ? [limit, offset, chamber] : [limit, offset];
   const rowsWhere  = chamber ? 'WHERE chamber = $3' : '';
 
@@ -33,20 +31,19 @@ async function getVotes({ limit = 50, offset = 0, chamber } = {}) {
 
   return {
     votes: rowsResult.rows,
-    total: countResult.rows[0].total,
+    total: (countResult.rows[0] as { total: number }).total,
   };
 }
 
-/**
- * Returns a single vote record, its member positions, and the adjacent vote IDs
- * (prev = older, next = newer) in date-descending order, optionally scoped to
- * the same chamber.
- *
- * @param {string} voteId   e.g. "h75-119.2025"
- * @param {string} [chamber] optional 'h' or 's' to scope prev/next navigation
- * @returns {Promise<{ vote: object, positions: Record<string, object[]>, prev_vote_id: string|null, next_vote_id: string|null } | null>}
- */
-async function getVoteDetail(voteId, chamber) {
+async function getVoteDetail(
+  voteId: string,
+  chamber?: string
+): Promise<{
+  vote: unknown;
+  positions: Record<string, unknown[]>;
+  prev_vote_id: string | null;
+  next_vote_id: string | null;
+} | null> {
   const voteResult = await pool.query(
     'SELECT * FROM congressional_votes WHERE vote_id = $1',
     [voteId]
@@ -54,7 +51,7 @@ async function getVoteDetail(voteId, chamber) {
 
   if (voteResult.rows.length === 0) return null;
 
-  const vote = voteResult.rows[0];
+  const vote = voteResult.rows[0] as Record<string, unknown>;
 
   const chamberFilter = chamber ? `AND chamber = '${chamber === 'h' ? 'h' : 's'}'` : '';
 
@@ -81,15 +78,14 @@ async function getVoteDetail(voteId, chamber) {
     ),
   ]);
 
-  /** @type {Record<string, object[]>} */
-  const positions = {};
-  for (const row of positionsResult.rows) {
+  const positions: Record<string, unknown[]> = {};
+  for (const row of positionsResult.rows as Array<{ position: string } & Record<string, unknown>>) {
     const { position, ...legislator } = row;
     if (!positions[position]) positions[position] = [];
     positions[position].push(legislator);
   }
 
-  const adjacent = adjacentResult.rows[0] ?? {};
+  const adjacent = (adjacentResult.rows[0] as Record<string, string | null> | undefined) ?? {};
 
   return {
     vote,
@@ -99,4 +95,4 @@ async function getVoteDetail(voteId, chamber) {
   };
 }
 
-module.exports = { getVotes, getVoteDetail };
+export { getVotes, getVoteDetail };
