@@ -1,7 +1,6 @@
-#!/usr/bin/env node
 import app from '../app';
 import debugLib from 'debug';
-import http from 'http';
+import http from 'node:http';
 
 const debug = debugLib('server:server');
 
@@ -15,8 +14,8 @@ server.on('error', onError);
 server.on('listening', onListening);
 
 function normalizePort(val: string): number | string | false {
-  const portNum = parseInt(val, 10);
-  if (isNaN(portNum)) return val;
+  const portNum = Number.parseInt(val, 10);
+  if (Number.isNaN(portNum)) return val;
   if (portNum >= 0) return portNum;
   return false;
 }
@@ -27,16 +26,19 @@ function onError(error: NodeJS.ErrnoException): void {
   const bind = typeof port === 'string' ? `Pipe ${port}` : `Port ${port}`;
 
   switch (error.code) {
-    case 'EACCES':
+    case 'EACCES': {
       console.error(`${bind} requires elevated privileges`);
       process.exit(1);
       break;
-    case 'EADDRINUSE':
+    }
+    case 'EADDRINUSE': {
       console.error(`${bind} is already in use`);
       process.exit(1);
       break;
-    default:
+    }
+    default: {
       throw error;
+    }
   }
 }
 
