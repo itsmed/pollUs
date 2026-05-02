@@ -1,5 +1,6 @@
-import fs from 'fs';
-import path from 'path';
+/* eslint-disable security/detect-non-literal-fs-filename */
+import fs from 'node:fs';
+import path from 'node:path';
 import pool from './index';
 import type { PoolClient } from 'pg';
 
@@ -118,9 +119,9 @@ async function seed(): Promise<void> {
         inserted++;
       }
       await client.query('COMMIT');
-    } catch (err) {
+    } catch (error) {
       await client.query('ROLLBACK');
-      console.error(`  ✗ ${path.relative(DATA_ROOT, file)}: ${(err as Error).message}`);
+      console.error(`  ✗ ${path.relative(DATA_ROOT, file)}: ${(error as Error).message}`);
       errors++;
     } finally {
       client.release();
@@ -134,8 +135,8 @@ async function seed(): Promise<void> {
 }
 
 seed()
-  .catch((err: Error) => {
-    console.error('Seed failed:', err.message);
+  .catch((error: Error) => {
+    console.error('Seed failed:', error.message);
     process.exit(1);
   })
   .finally(() => pool.end());
