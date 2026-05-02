@@ -7,7 +7,7 @@ import n from "eslint-plugin-n";
 import security from "eslint-plugin-security";
 import unicorn from "eslint-plugin-unicorn";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default tseslint.config([
   js.configs.recommended,
@@ -21,14 +21,8 @@ export default tseslint.config([
         ...globals.node,
       },
       parserOptions: {
-        tsconfigRootDir: __dirname,
+        tsconfigRootDir: dirname,
       },
-    },
-  },
-  {
-    files: ["**/*.js"],
-    rules: {
-      "@typescript-eslint/no-require-imports": "off",
     },
   },
   {
