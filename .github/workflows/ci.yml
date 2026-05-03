@@ -1,0 +1,253 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  NODE_VERSION: '20'
+  PNPM_VERSION: '9'
+
+# ── Client unit tests ──────────────────────────────────────────────────────────
+jobs:
+  test-client:
+    name: Client — lint & test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm --filter client lint
+
+      - name: Unit tests with coverage
+        run: pnpm --filter client test:coverage
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: client-coverage
+          path: client/coverage/lcov.info
+          retention-days: 1
+
+# ── Server unit tests ──────────────────────────────────────────────────────────
+  test-server:
+    name: Server — lint & test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm --filter server lint
+
+      - name: Unit tests with coverage
+        run: pnpm --filter server test:coverage
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: server-coverage
+          path: server/coverage/lcov.info
+          retention-days: 1
+
+# ── E2E tests ──────────────────────────────────────────────────────────────────
+  test-e2e:
+    name: E2E tests (Playwright)
+    runs-on: ubuntu-latest
+    needs: [test-client, test-server]
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: votr
+          POSTGRES_PASSWORD: votr_dev
+          POSTGRES_DB: votr_dev
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U votr"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: pnpm --filter @votr/e2e exec playwright install --with-deps chromium
+
+      - name: Initialise database
+        run: |
+          sudo apt-get install -y --no-install-recommends postgresql-client
+          psql postgresql://votr:votr_dev@localhost:5432/votr_dev \
+            -f docker/postgres/init/01_init.sql
+          DATABASE_URL=postgresql://votr:votr_dev@localhost:5432/votr_dev \
+            bash scripts/migrate.sh
+
+      # Apple's passport strategy requires a real-looking EC key at init time.
+      # We generate a throwaway key so the server starts without crashing;
+      # Apple OAuth itself is never exercised by e2e tests.
+      - name: Generate Apple private key stub
+        run: |
+          openssl ecparam -name prime256v1 -genkey -noout \
+            | openssl pkcs8 -topk8 -nocrypt > /tmp/ci_apple.key
+          echo "APPLE_PRIVATE_KEY<<KEYEOF" >> "$GITHUB_ENV"
+          cat /tmp/ci_apple.key       >> "$GITHUB_ENV"
+          echo "KEYEOF"               >> "$GITHUB_ENV"
+
+      - name: Start server
+        env:
+          DATABASE_URL: postgresql://votr:votr_dev@localhost:5432/votr_dev
+          NODE_ENV: development
+          PORT: '4000'
+          GOOGLE_CLIENT_ID: ci-stub
+          GOOGLE_CLIENT_SECRET: ci-stub
+          APPLE_CLIENT_ID: ci.stub.service
+          APPLE_TEAM_ID: TEAMID0001
+          APPLE_KEY_ID: KEYID00001
+          API_URL: http://localhost:4000
+          CLIENT_URL: http://localhost:3000
+        run: nohup pnpm --filter server start > /tmp/server.log 2>&1 &
+
+      - name: Start client dev server
+        env:
+          VITE_API_URL: http://localhost:4000
+        run: nohup pnpm --filter client dev > /tmp/client.log 2>&1 &
+
+      - name: Wait for services
+        run: |
+          echo "Waiting for server on :4000…"
+          timeout 60 bash -c \
+            'until curl -so /dev/null http://localhost:4000/api/auth/me; do sleep 2; done'
+          echo "Server ready."
+          echo "Waiting for client on :3000…"
+          timeout 60 bash -c \
+            'until curl -so /dev/null http://localhost:3000; do sleep 2; done'
+          echo "Client ready."
+
+      - name: Run e2e tests
+        env:
+          E2E_BASE_URL: http://localhost:3000
+          E2E_API_URL: http://localhost:4000
+        run: pnpm --filter @votr/e2e test
+
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: e2e/playwright-report/
+          retention-days: 7
+
+      - name: Upload server log on failure
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: server-log
+          path: /tmp/server.log
+          retention-days: 3
+
+# ── SonarQube scan ─────────────────────────────────────────────────────────────
+  sonarqube:
+    name: SonarQube scan
+    runs-on: ubuntu-latest
+    needs: [test-client, test-server, test-e2e]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # SonarQube needs full history for blame/SCM data
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: client-coverage
+          path: client/coverage
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: server-coverage
+          path: server/coverage
+
+      - name: SonarQube scan
+        uses: sonarsource/sonarqube-scan-action@v5
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+
+# ── Build & push Docker images ─────────────────────────────────────────────────
+  build-push:
+    name: Build & push ${{ matrix.service }}
+    runs-on: ubuntu-latest
+    needs: [sonarqube]
+    # Only publish on direct pushes to main (not PRs)
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - service: client
+            dockerfile: client/Dockerfile
+            image: djgill/votr-client
+          - service: server
+            dockerfile: server/Dockerfile
+            image: djgill/votr-server
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - uses: docker/metadata-action@v5
+        id: meta
+        with:
+          images: ${{ matrix.image }}
+          tags: |
+            type=sha,prefix=,format=short
+            type=raw,value=latest
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
