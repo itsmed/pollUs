@@ -9,6 +9,11 @@ on:
 env:
   NODE_VERSION: '20'
   PNPM_VERSION: '9'
+  # CI test database — ephemeral postgres service container, not a real secret
+  CI_POSTGRES_USER: votr
+  CI_POSTGRES_PASSWORD: votr_dev
+  CI_POSTGRES_DB: votr_dev
+  CI_DATABASE_URL: postgresql://votr:votr_dev@localhost:5432/votr_dev
 
 # ── Client unit tests ──────────────────────────────────────────────────────────
 jobs:
@@ -82,13 +87,13 @@ jobs:
       postgres:
         image: postgres:16
         env:
-          POSTGRES_USER: votr
-          POSTGRES_PASSWORD: votr_dev
-          POSTGRES_DB: votr_dev
+          POSTGRES_USER: ${{ env.CI_POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ env.CI_POSTGRES_PASSWORD }}
+          POSTGRES_DB: ${{ env.CI_POSTGRES_DB }}
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U votr"
+          --health-cmd "pg_isready -U ${{ env.CI_POSTGRES_USER }}"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
@@ -113,10 +118,8 @@ jobs:
       - name: Initialise database
         run: |
           sudo apt-get install -y --no-install-recommends postgresql-client
-          psql postgresql://votr:votr_dev@localhost:5432/votr_dev \
-            -f docker/postgres/init/01_init.sql
-          DATABASE_URL=postgresql://votr:votr_dev@localhost:5432/votr_dev \
-            bash scripts/migrate.sh
+          psql "$CI_DATABASE_URL" -f docker/postgres/init/01_init.sql
+          DATABASE_URL="$CI_DATABASE_URL" bash scripts/migrate.sh
 
       # Apple's passport strategy requires a real-looking EC key at init time.
       # We generate a throwaway key so the server starts without crashing;
@@ -131,7 +134,7 @@ jobs:
 
       - name: Start server
         env:
-          DATABASE_URL: postgresql://votr:votr_dev@localhost:5432/votr_dev
+          DATABASE_URL: ${{ env.CI_DATABASE_URL }}
           NODE_ENV: development
           PORT: '4000'
           GOOGLE_CLIENT_ID: ci-stub
