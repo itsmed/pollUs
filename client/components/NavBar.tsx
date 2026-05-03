@@ -109,7 +109,7 @@ export default function NavBar() {
     <nav className={`shrink-0 border-b ${borderBase} ${surface}`}>
       <div className="mx-auto flex max-w-7xl items-center gap-6 px-4 sm:px-6">
         <Link to="/" className={`py-4 text-sm font-semibold ${textPrimary} hover:text-blue-600 dark:hover:text-blue-400`}>
-          Polis
+          Votr 
         </Link>
 
         <div className="flex items-center gap-1">

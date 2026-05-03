@@ -34,7 +34,7 @@ test('renders main nav links and user name', () => {
     </QueryClientProvider>
   );
 
-  expect(screen.getByText('Polis')).toBeInTheDocument();
+  expect(screen.getByText('Votr')).toBeInTheDocument();
   expect(screen.getByText('Bills')).toBeInTheDocument();
   expect(screen.getByText('Members')).toBeInTheDocument();
   expect(screen.getByText('Votes')).toBeInTheDocument();
