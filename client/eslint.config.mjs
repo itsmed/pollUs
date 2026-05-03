@@ -21,6 +21,13 @@ export default tseslint.config(
     },
   },
   {
-    ignores: ['dist/**', 'node_modules/**'],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.json'],
+      },
+    },
+  },
+  {
+    ignores: ['dist/**', 'node_modules/**', 'coverage/**', '*.config.mjs'],
   }
 );

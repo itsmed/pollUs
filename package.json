@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "prepare": "husky install",
+    "prepare": "husky",
     "dev": "docker compose up db -d --wait && concurrently --names 'server,client' --prefix-colors 'yellow,cyan' 'pnpm --filter server dev' 'pnpm --filter client dev'",
     "dev:server": "docker compose up db -d --wait && pnpm --filter server dev",
     "dev:client": "pnpm --filter client dev",
@@ -16,7 +16,8 @@
     "db:reset": "docker compose down -v && docker compose up db -d --wait",
     "build": "pnpm --filter client build",
     "dev:mobile": "pnpm --filter @votr/mobile dev",
-    "lint": "pnpm --filter server lint && pnpm --filter client lint"
+    "lint": "pnpm --filter server lint && pnpm --filter client lint",
+    "test:e2e": "pnpm --filter @votr/e2e test"
   },
   "devDependencies": {
     "concurrently": "^9.0.0",

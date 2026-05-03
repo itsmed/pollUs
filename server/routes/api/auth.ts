@@ -100,6 +100,26 @@ router.post('/logout', (_req, res) => {
   res.json({ ok: true });
 });
 
+// Dev-only: seed the dev user and set auth cookie (used by e2e tests)
+router.post('/dev-login', async (req: Request, res: Response, next: NextFunction) => {
+  if (process.env.NODE_ENV === 'production') {
+    res.status(404).json({ error: 'Not found' });
+    return;
+  }
+  try {
+    const id = await findOrCreateUser({ email: 'dev@local.dev', name: 'Dev User' });
+    res.cookie(COOKIE_NAME, String(id), {
+      httpOnly: true,
+      maxAge: COOKIE_MAX_AGE,
+      sameSite: 'lax',
+      secure: false,
+    });
+    res.json({ ok: true, userId: id });
+  } catch (error) {
+    next(error);
+  }
+});
+
 router.get('/me', (req, res) => {
   if (!req.user) return res.status(401).json({ error: 'Not authenticated' });
   res.json({ user: req.user });

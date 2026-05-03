@@ -2,4 +2,5 @@ packages:
   - client
   - server
   - mobile
+  - e2e
   - packages/*
