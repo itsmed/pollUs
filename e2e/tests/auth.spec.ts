@@ -9,8 +9,13 @@ test.describe('auth', () => {
     await expect(page.getByRole('link', { name: 'Dev User' })).toBeVisible();
   });
 
-  test('shows log in button when cookie is cleared', async ({ page, context }) => {
-    await context.clearCookies();
+  test('shows log in button when server returns unauthenticated', async ({ page }) => {
+    // In dev mode the server auto-logs in dev@local.dev even without a cookie,
+    // so clearing cookies alone doesn't produce an unauthenticated state.
+    // Route the auth check to return 401 to simulate a logged-out browser.
+    await page.route('**/api/auth/me', route =>
+      route.fulfill({ status: 401, contentType: 'application/json', body: JSON.stringify({ error: 'Not authenticated' }) })
+    );
     await page.goto('/');
     await page.waitForLoadState('networkidle');
     await expect(page.getByRole('button', { name: 'Log in' })).toBeVisible();
@@ -37,8 +42,10 @@ test.describe('auth', () => {
     await expect(page).toHaveURL('/profile');
   });
 
-  test('log in button navigates to /login', async ({ page, context }) => {
-    await context.clearCookies();
+  test('log in button navigates to /login', async ({ page }) => {
+    await page.route('**/api/auth/me', route =>
+      route.fulfill({ status: 401, contentType: 'application/json', body: JSON.stringify({ error: 'Not authenticated' }) })
+    );
     await page.goto('/');
     await page.waitForLoadState('networkidle');
     await page.getByRole('button', { name: 'Log in' }).click();

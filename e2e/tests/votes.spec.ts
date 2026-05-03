@@ -30,7 +30,7 @@ test.describe('votes', () => {
   });
 
   test('vote cards link to detail pages', async ({ page }) => {
-    const links = page.getByRole('link').filter({ hasNot: page.getByRole('navigation') });
+    const links = page.locator('a[href^="/votes/"]');
     const count = await links.count();
     if (count === 0) {
       test.skip();
@@ -41,7 +41,7 @@ test.describe('votes', () => {
   });
 
   test('vote detail page loads', async ({ page }) => {
-    const links = page.getByRole('link').filter({ hasNot: page.getByRole('navigation') });
+    const links = page.locator('a[href^="/votes/"]');
     const count = await links.count();
     if (count === 0) {
       test.skip();
