@@ -193,12 +193,12 @@ jobs:
         with:
           fetch-depth: 0   # SonarQube needs full history for blame/SCM data
 
-      - uses: actions/download-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
           name: client-coverage
           path: client/coverage
 
-      - uses: actions/download-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
           name: server-coverage
           path: server/coverage
