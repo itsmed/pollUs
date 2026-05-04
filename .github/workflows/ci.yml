@@ -1,0 +1,258 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  NODE_VERSION: '20'
+  PNPM_VERSION: '9'
+  # CI test database — ephemeral postgres service container.
+  # Password is in secrets.CI_POSTGRES_PASSWORD (value: votr_dev) to satisfy
+  # SonarQube S6437 (no hardcoded credentials). URL is composed at runtime.
+  CI_POSTGRES_USER: votr
+  CI_POSTGRES_DB: votr_dev
+
+# ── Client unit tests ──────────────────────────────────────────────────────────
+jobs:
+  test-client:
+    name: Client — lint & test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm --filter client lint
+
+      - name: Unit tests with coverage
+        run: pnpm --filter client test:coverage
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: client-coverage
+          path: client/coverage/lcov.info
+          retention-days: 1
+
+# ── Server unit tests ──────────────────────────────────────────────────────────
+  test-server:
+    name: Server — lint & test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm --filter server lint
+
+      - name: Unit tests with coverage
+        run: pnpm --filter server test:coverage
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: server-coverage
+          path: server/coverage/lcov.info
+          retention-days: 1
+
+# ── E2E tests ──────────────────────────────────────────────────────────────────
+  test-e2e:
+    name: E2E tests (Playwright)
+    runs-on: ubuntu-latest
+    needs: [test-client, test-server]
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: ${{ env.CI_POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.CI_POSTGRES_PASSWORD }}
+          POSTGRES_DB: ${{ env.CI_POSTGRES_DB }}
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ${{ env.CI_POSTGRES_USER }}"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: pnpm --filter @votr/e2e exec playwright install --with-deps chromium
+
+      - name: Initialise database
+        env:
+          DATABASE_URL: "postgresql://${{ env.CI_POSTGRES_USER }}:${{ secrets.CI_POSTGRES_PASSWORD }}@localhost:5432/${{ env.CI_POSTGRES_DB }}"
+        run: |
+          sudo apt-get install -y --no-install-recommends postgresql-client
+          psql "$DATABASE_URL" -f docker/postgres/init/01_init.sql
+          bash scripts/migrate.sh
+
+      # Apple's passport strategy requires a real-looking EC key at init time.
+      # We generate a throwaway key so the server starts without crashing;
+      # Apple OAuth itself is never exercised by e2e tests.
+      - name: Generate Apple private key stub
+        run: |
+          openssl ecparam -name prime256v1 -genkey -noout \
+            | openssl pkcs8 -topk8 -nocrypt > /tmp/ci_apple.key
+          echo "APPLE_PRIVATE_KEY<<KEYEOF" >> "$GITHUB_ENV"
+          cat /tmp/ci_apple.key       >> "$GITHUB_ENV"
+          echo "KEYEOF"               >> "$GITHUB_ENV"
+
+      - name: Start server
+        env:
+          DATABASE_URL: "postgresql://${{ env.CI_POSTGRES_USER }}:${{ secrets.CI_POSTGRES_PASSWORD }}@localhost:5432/${{ env.CI_POSTGRES_DB }}"
+          NODE_ENV: development
+          PORT: '4000'
+          GOOGLE_CLIENT_ID: ci-stub
+          GOOGLE_CLIENT_SECRET: ci-stub
+          APPLE_CLIENT_ID: ci.stub.service
+          APPLE_TEAM_ID: TEAMID0001
+          APPLE_KEY_ID: KEYID00001
+          API_URL: http://localhost:4000
+          CLIENT_URL: http://localhost:3000
+        run: nohup pnpm --filter server start > /tmp/server.log 2>&1 &
+
+      - name: Start client dev server
+        env:
+          VITE_API_URL: http://localhost:4000
+        run: nohup pnpm --filter client dev > /tmp/client.log 2>&1 &
+
+      - name: Wait for services
+        run: |
+          echo "Waiting for server on :4000…"
+          timeout 60 bash -c \
+            'until curl -so /dev/null http://localhost:4000/api/auth/me; do sleep 2; done'
+          echo "Server ready."
+          echo "Waiting for client on :3000…"
+          timeout 60 bash -c \
+            'until curl -so /dev/null http://localhost:3000; do sleep 2; done'
+          echo "Client ready."
+
+      - name: Run e2e tests
+        env:
+          E2E_BASE_URL: http://localhost:3000
+          E2E_API_URL: http://localhost:4000
+        run: pnpm --filter @votr/e2e test
+
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: playwright-report
+          path: e2e/playwright-report/
+          retention-days: 7
+
+      - name: Upload server log on failure
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: failure()
+        with:
+          name: server-log
+          path: /tmp/server.log
+          retention-days: 3
+
+# ── SonarQube scan ─────────────────────────────────────────────────────────────
+  sonarqube:
+    name: SonarQube scan
+    runs-on: ubuntu-latest
+    needs: [test-client, test-server, test-e2e]
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          fetch-depth: 0   # SonarQube needs full history for blame/SCM data
+
+      - uses: actions/download-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: client-coverage
+          path: client/coverage
+
+      - uses: actions/download-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: server-coverage
+          path: server/coverage
+
+      - name: SonarQube scan
+        uses: sonarsource/sonarqube-scan-action@2f77a1ec69fb1d595b06f35ab27e97605bdef703
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+
+# ── Build & push Docker images ─────────────────────────────────────────────────
+  build-push:
+    name: Build & push ${{ matrix.service }}
+    runs-on: ubuntu-latest
+    needs: [sonarqube]
+    # Only publish on direct pushes to main (not PRs)
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - service: client
+            dockerfile: client/Dockerfile
+            image: djgill/votr-client
+          - service: server
+            dockerfile: server/Dockerfile
+            image: djgill/votr-server
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+
+      - uses: docker/setup-buildx-action@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+
+      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051
+        id: meta
+        with:
+          images: ${{ matrix.image }}
+          tags: |
+            type=sha,prefix=,format=short
+            type=raw,value=latest
+
+      - uses: docker/build-push-action@c299e40c65443455700f0fdfc63efafe5b349051
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
