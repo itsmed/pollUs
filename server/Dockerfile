@@ -22,7 +22,7 @@ WORKDIR /app
 COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
 COPY server/package.json ./server/
 RUN --mount=type=cache,id=pnpm-server-prod,target=/pnpm/store \
-    pnpm install --frozen-lockfile --filter server --prod
+    HUSKY=0 pnpm install --frozen-lockfile --filter server --prod
 
 # ── Minimal runtime image ─────────────────────────────────────────────────────
 FROM node:20-alpine AS runner
