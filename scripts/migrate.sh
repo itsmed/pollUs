@@ -37,19 +37,25 @@ fi
 DB_USER="${POSTGRES_USER:-votr}"
 DB_NAME="${POSTGRES_DB:-votr_dev}"
 
-# Resolve running container name (supports both docker compose v1 and v2 naming)
-CONTAINER=$(docker ps --filter "ancestor=votr-db" --format "{{.Names}}" | head -1)
-if [[ -z "$CONTAINER" ]]; then
-  CONTAINER=$(docker ps --filter "name=votr-db" --format "{{.Names}}" | head -1)
-fi
-if [[ -z "$CONTAINER" ]]; then
-  echo "Error: no running Postgres container found. Run 'pnpm db:up' first." >&2
-  exit 1
-fi
+if [[ -n "${DATABASE_URL:-}" ]]; then
+  psql_exec() {
+    psql "$DATABASE_URL" "$@"
+  }
+else
+  # Resolve running container name (supports both docker compose v1 and v2 naming)
+  CONTAINER=$(docker ps --filter "ancestor=votr-db" --format "{{.Names}}" | head -1)
+  if [[ -z "$CONTAINER" ]]; then
+    CONTAINER=$(docker ps --filter "name=votr-db" --format "{{.Names}}" | head -1)
+  fi
+  if [[ -z "$CONTAINER" ]]; then
+    echo "Error: no running Postgres container found. Run 'pnpm db:up' first." >&2
+    exit 1
+  fi
 
-psql_exec() {
-  docker exec -i "$CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" "$@"
-}
+  psql_exec() {
+    docker exec -i "$CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" "$@"
+  }
+fi
 
 # Ensure the tracking table exists (handles DBs created before this script)
 psql_exec -c "
