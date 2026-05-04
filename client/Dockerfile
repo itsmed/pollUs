@@ -25,7 +25,8 @@ ENV VITE_API_URL=${VITE_API_URL}
 RUN pnpm --filter client build
 
 # ── Serve static assets with nginx ───────────────────────────────────────────
-FROM nginx:alpine AS runner
+# nginx-unprivileged runs as uid 101 (nginx) instead of root; port 8080 by default
+FROM nginxinc/nginx-unprivileged:alpine AS runner
 COPY --from=build /app/client/dist /usr/share/nginx/html
 COPY client/nginx.conf /etc/nginx/conf.d/default.conf
 EXPOSE 8080
