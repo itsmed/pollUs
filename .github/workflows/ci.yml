@@ -85,6 +85,7 @@ jobs:
       postgres:
         image: postgres:16
         env:
+          POSTGRES_USER: ${{ env.CI_POSTGRES_USER }}
           POSTGRES_PASSWORD: ${{ secrets.CI_POSTGRES_PASSWORD }}
           POSTGRES_DB: ${{ env.CI_POSTGRES_DB }}
         ports:
