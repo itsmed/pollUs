@@ -91,7 +91,7 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U ${{ env.CI_POSTGRES_USER }}"
+          --health-cmd "pg_isready -U $CI_POSTGRES_USER"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
