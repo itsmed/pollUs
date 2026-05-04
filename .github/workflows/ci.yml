@@ -85,13 +85,12 @@ jobs:
       postgres:
         image: postgres:16
         env:
-          POSTGRES_USER: ${{ env.CI_POSTGRES_USER }}
           POSTGRES_PASSWORD: ${{ secrets.CI_POSTGRES_PASSWORD }}
           POSTGRES_DB: ${{ env.CI_POSTGRES_DB }}
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U $CI_POSTGRES_USER"
+          --health-cmd "pg_isready -U postgres"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
