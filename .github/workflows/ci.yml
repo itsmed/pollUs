@@ -90,7 +90,7 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U postgres"
+          --health-cmd "pg_isready -U votr"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
@@ -133,7 +133,7 @@ jobs:
 
       - name: Start server
         env:
-          DATABASE_URL: "postgresql://${{ env.CI_POSTGRES_USER }}:${{ secrets.CI_POSTGRES_PASSWORD }}@localhost:5432/${{ env.CI_POSTGRES_DB }}"
+          DATABASE_URL: "postgresql://votr:${{ secrets.CI_POSTGRES_PASSWORD }}@localhost:5432/${{ env.CI_POSTGRES_DB }}"
           NODE_ENV: development
           PORT: '4000'
           GOOGLE_CLIENT_ID: ci-stub
