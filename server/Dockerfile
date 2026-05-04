@@ -29,8 +29,9 @@ FROM node:20-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 
-COPY --from=prod-deps /app/server/node_modules ./node_modules
-COPY --from=build /app/server/dist ./dist
+COPY --from=prod-deps --chown=node:node /app/server/node_modules ./node_modules
+COPY --from=build --chown=node:node /app/server/dist ./dist
 
+USER node
 EXPOSE 4000
 CMD ["node", "dist/bin/www.js"]
