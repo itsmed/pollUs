@@ -31,6 +31,7 @@ ENV NODE_ENV=production
 
 COPY --from=prod-deps --chown=node:node /app/server/node_modules ./node_modules
 COPY --from=build --chown=node:node /app/server/dist ./dist
+RUN chmod -R a-w ./node_modules ./dist
 
 USER node
 EXPOSE 4000
