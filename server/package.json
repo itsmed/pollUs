@@ -5,9 +5,11 @@
   "scripts": {
     "start": "tsx ./bin/www.ts",
     "dev": "NODE_ENV=development ./node_modules/.bin/nodemon --exec 'tsx --env-file=.env.development.local' ./bin/www.ts",
+    "build": "tsc",
     "db:setup": "tsx --env-file=.env.development.local db/setup.js",
     "db:seed-votes": "node --env-file=.env.development.local db/seedVotes.js",
     "test": "jest",
+    "test:coverage": "jest --coverage",
     "lint": "eslint ."
   },
   "jest": {
@@ -17,7 +19,16 @@
     ],
     "transform": {
       "^.+\\.ts$": "ts-jest"
-    }
+    },
+    "coverageDirectory": "coverage",
+    "coverageReporters": ["lcov", "text-summary"],
+    "collectCoverageFrom": [
+      "**/*.ts",
+      "!**/*.d.ts",
+      "!**/*.test.ts",
+      "!tests/**",
+      "!bin/**"
+    ]
   },
   "dependencies": {
     "cookie-parser": "~1.4.4",
