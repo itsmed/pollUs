@@ -14,7 +14,7 @@ test.describe('bills', () => {
     // Either shows bills or an empty/error state — never a blank page
     const heading = page.getByRole('heading', { name: 'Bills' });
     await expect(heading).toBeVisible();
-    const content = page.locator('main, [role="main"], .overflow-y-auto').first();
+    const content = page.locator('main, [role="main"]').first();
     await expect(content).not.toBeEmpty();
   });
 

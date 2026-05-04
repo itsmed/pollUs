@@ -137,6 +137,7 @@ jobs:
           DATABASE_URL: "postgresql://votr:${{ secrets.CI_POSTGRES_PASSWORD }}@localhost:5432/${{ env.CI_POSTGRES_DB }}"
           NODE_ENV: development
           PORT: '4000'
+          CONGRESS_API_KEY: ${{ secrets.CONGRESS_API_KEY }}
           GOOGLE_CLIENT_ID: ci-stub
           GOOGLE_CLIENT_SECRET: ci-stub
           APPLE_CLIENT_ID: ci.stub.service
