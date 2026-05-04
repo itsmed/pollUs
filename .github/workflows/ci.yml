@@ -3,6 +3,8 @@ name: CI/CD
 on:
   pull_request:
     branches: [main]
+  push:
+    branches: [main]
 
 env:
   NODE_VERSION: '20'
@@ -91,7 +93,7 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U ${{ env.CI_POSTGRES_USER }}"
+          --health-cmd "pg_isready -U votr -d votr_dev"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
@@ -134,9 +136,10 @@ jobs:
 
       - name: Start server
         env:
-          DATABASE_URL: "postgresql://${{ env.CI_POSTGRES_USER }}:${{ secrets.CI_POSTGRES_PASSWORD }}@localhost:5432/${{ env.CI_POSTGRES_DB }}"
+          DATABASE_URL: "postgresql://votr:${{ secrets.CI_POSTGRES_PASSWORD }}@localhost:5432/${{ env.CI_POSTGRES_DB }}"
           NODE_ENV: development
           PORT: '4000'
+          CONGRESS_API_KEY: ${{ secrets.CONGRESS_API_KEY }}
           GOOGLE_CLIENT_ID: ci-stub
           GOOGLE_CLIENT_SECRET: ci-stub
           APPLE_CLIENT_ID: ci.stub.service
@@ -194,12 +197,12 @@ jobs:
         with:
           fetch-depth: 0   # SonarQube needs full history for blame/SCM data
 
-      - uses: actions/download-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
           name: client-coverage
           path: client/coverage
 
-      - uses: actions/download-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
           name: server-coverage
           path: server/coverage
@@ -245,7 +248,7 @@ jobs:
             type=sha,prefix=,format=short
             type=raw,value=latest
 
-      - uses: docker/build-push-action@c299e40c65443455700f0fdfc63efafe5b349051
+      - uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8
         with:
           context: .
           file: ${{ matrix.dockerfile }}

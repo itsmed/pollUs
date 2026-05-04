@@ -9,7 +9,7 @@ export default function BillsPage() {
   const { bills, isLoading, isError } = useBills();
 
   return (
-    <div className={pageShellFixed}>
+    <main className={pageShellFixed}>
       <header className={`shrink-0 ${pageHeaderColors} px-6 py-4`}>
         <h1 className={`text-xl font-semibold ${textPrimary}`}>Bills</h1>
         {!isLoading && !isError && (
@@ -34,6 +34,6 @@ export default function BillsPage() {
           <BillList bills={bills} />
         </div>
       )}
-    </div>
+    </main>
   );
 }
